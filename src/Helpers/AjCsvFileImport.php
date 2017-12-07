@@ -944,7 +944,7 @@ class AjCsvFileImport
         $file_prefix = "aj_" . $child_table_name;
         //$folder      = storage_path('app/Ajency/Ajfileimport/validchilddata/');
         //$folder      = storage_path('app/Ajency/');
-        $folder = $import_libs->getMysqlTempDirectory() . "/Ajency";
+        $folder = $import_libs->getMysqlTempDirectory() . "/Ajency/";
 
         $import_libs->createDirectoryIfDontExists($folder);
 
@@ -1229,7 +1229,7 @@ class AjCsvFileImport
         $file_prefix    = "aj_errorlog";
         // $folder         = storage_path('app/Ajency/Ajfileimport/errorlogs/');
         //$folder         = storage_path('app/Ajency/');
-        $folder = $import_libs->getMysqlTempDirectory() . "/Ajency";
+        $folder = $import_libs->getMysqlTempDirectory() . "/Ajency/";
 
         $import_libs->createDirectoryIfDontExists($folder);
 
