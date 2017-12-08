@@ -908,12 +908,15 @@ class AjCsvFileImport
             $comma_field_conf = $child_table_conf['commafield_to_multirecords'];
 
             foreach ($comma_field_conf as $comma_key => $comma_value) {
-                $comma_field_select = "SUBSTRING_INDEX(SUBSTRING_INDEX(" . $comma_key . ", ',', numbers.n), ',', -1) " . $comma_key;
+                //$comma_field_select = "SUBSTRING_INDEX(SUBSTRING_INDEX(" . $comma_key . ", ',', numbers.n), ',', -1) " . $comma_key;
+                $comma_field_select = "SUBSTRING_INDEX(SUBSTRING_INDEX(SUBSTRING_INDEX(" . $comma_key . ", ',', numbers.n), ',', -1),'|',1) " . $comma_key;//updated for array('34|slug1,4|slug2,12|slug3')
 
                 $comma_field_from = "  (SELECT 1 n UNION ALL SELECT 2
    UNION ALL SELECT 3 UNION ALL SELECT 4 UNION ALL SELECT 5 UNION ALL SELECT 6 UNION ALL SELECT 7 UNION ALL SELECT 8 UNION ALL SELECT 9 UNION ALL SELECT 10 UNION ALL SELECT 11 UNION ALL SELECT 12 UNION ALL SELECT 13 UNION ALL SELECT 14 UNION ALL SELECT 15 UNION ALL SELECT 16 UNION ALL SELECT 17 UNION ALL SELECT 18 UNION ALL SELECT 19 UNION ALL SELECT 20) numbers INNER JOIN " . $temp_tablename . "
   ON CHAR_LENGTH(" . $comma_key . ")
      -CHAR_LENGTH(REPLACE(" . $comma_key . ", ',', ''))>=numbers.n-1 ";
+
+
             }
 
         }
