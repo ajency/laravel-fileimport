@@ -138,10 +138,10 @@ class AjImportlibs
     public function getMysqlTempDirectory()
     {
 
-        $qry_get_mysql_temp_directory = "SHOW VARIABLES LIKE 'tmpdir'";
+        $qry_get_mysql_temp_directory = "SHOW VARIABLES LIKE 'secure_file_priv'";
         $res_get_mysql_temp_directory = DB::select($qry_get_mysql_temp_directory);
         foreach ($res_get_mysql_temp_directory as $res_v) {
-            return $res_v->Value;
+            return str_replace("\\","\\\\", $res_v->Value);
         }
 
     }
