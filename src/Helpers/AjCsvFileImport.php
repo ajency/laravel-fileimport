@@ -56,7 +56,8 @@ class AjCsvFileImport
 
         $this->msg               = "<br/> Checking the file permissions ....";
         $result_file_permissions = $import_libs->createTestImportFolder();
-        if ($result_file_permissions['errors'] == false) {
+
+        if (count($result_file_permissions['errors'])>0) {
             $this->set_ajx_return_logs($result_file_permissions);
             return response()->json($this->ajx_return_logs());
         }
@@ -135,7 +136,10 @@ class AjCsvFileImport
     {
         $this->logs   = array_merge($this->logs, $params['logs']);
         $this->errors = array_merge($this->errors, $params['errors']);
-        $this->msg    = $this->msg . $params['msg'];
+        if(isset($params['msg'])){
+            $this->msg    = $this->msg . $params['msg'];
+        }
+
 
     }
 
@@ -530,7 +534,9 @@ class AjCsvFileImport
     public function loadFiledatainTempTable($real_file_path, $file_headers, $temp_tablename)
     {
 
-        $file_path = str_replace("\\", "\\\\", $real_file_path);
+        //$file_path = str_replace("\\", "\\\\", $real_file_path);
+        $import_libs = new AjImportlibs();
+        $file_path   = $import_libs->formatImportExportFilePath($real_file_path);
 
         $qry_load_data = "LOAD DATA LOCAL INFILE '" . $file_path . "' INTO TABLE `" . $temp_tablename . "`
                  FIELDS TERMINATED BY ','
@@ -837,6 +843,7 @@ class AjCsvFileImport
     public function exportValidTemptableDataToFile($params)
     {
 
+        $import_libs      = new AjImportlibs();
         $child_table_conf = $params['childtable'];
 
         $total_childs        = $params['total_childs'];
@@ -862,8 +869,6 @@ class AjCsvFileImport
         $temp_fields = implode("`,`", $temp_fields_ar);
 
         $child_fields_ar = array_values($child_field_maps);
-
-        $import_libs = new AjImportlibs();
 
         /* If any clumns on temptable needs to be updated by configured set of values from config file*/
 
@@ -944,9 +949,12 @@ class AjCsvFileImport
         $file_prefix = "aj_" . $child_table_name;
         //$folder      = storage_path('app/Ajency/Ajfileimport/validchilddata/');
         //$folder      = storage_path('app/Ajency/');
-        $folder = $import_libs->getMysqlTempDirectory() . "/Ajency/";
+        $folder = $import_libs->getTempImportExportDirectory() . "/Ajency/";
 
-        $import_libs->createDirectoryIfDontExists($folder);
+        Log::info('TEMPORARY EXPORT DIRECTORY ');
+        Log::info($folder);
+
+        $folder_check = $import_libs->createDirectoryIfDontExists($folder);
 
         $child_outfile_name = $import_libs->generateUniqueOutfileName($file_prefix, $folder);
 
@@ -956,7 +964,9 @@ class AjCsvFileImport
 
         // $request->file('ajfile')->storeAs('Ajency/Ajfileimport/Files', $new_file_name);
 
-        $file_path = str_replace("\\", "\\\\", $child_outfile_name);
+        //$file_path = str_replace("\\", "\\\\", $child_outfile_name);
+
+        $file_path = $import_libs->formatImportExportFilePath($child_outfile_name);
 
         try {
 
@@ -1090,8 +1100,8 @@ class AjCsvFileImport
 
                     $where_condition .= " AND ";
 
-                    /*$where_condition .= " tmpdata." . $tempfield . " COLLATE utf8_general_ci = " . "childtable." . $childfield . " COLLATE 
- utf8_general_ci ";*/
+                    /*$where_condition .= " tmpdata." . $tempfield . " COLLATE utf8_general_ci = " . "childtable." . $childfield . " COLLATE
+                    utf8_general_ci ";*/
                     $where_condition .= " tmpdata." . $tempfield . "  = " . "childtable." . $childfield . " ";
                     $cnt_where++;
                 }
@@ -1103,7 +1113,7 @@ class AjCsvFileImport
 
                 $qry_update_child_ids = "UPDATE " . $temp_tablename . " tmpdata, " . $child_table_conf['name'] . " childtable
                 SET
-                    tmpdata." . $child_insert_id_on_temp_table . " =  CAST(childtable." . $child_insert_id_field . " as CHAR(50)) 
+                    tmpdata." . $child_insert_id_on_temp_table . " =  CAST(childtable." . $child_insert_id_field . " as CHAR(50))
                 WHERE  tmpdata.id in (" . $temp_table_ids_by_batch . ")  AND  tmpdata.aj_isvalid!='N'" . $where_condition;
 
                 try {
@@ -1186,27 +1196,25 @@ class AjCsvFileImport
 
         try {
 
-            /*$qry_comma_seperated_temp_ids = "SELECT GROUP_CONCAT(id) as concat_ids FROM (SELECT id FROM " . $temp_tablename . " tt ORDER BY tt.id ASC LIMIT " . $limit . "," . $batchsize . ")  tt2 "; 
-            $res_comma_seperated_temp_ids = DB::select($qry_comma_seperated_temp_ids); 
+            /*$qry_comma_seperated_temp_ids = "SELECT GROUP_CONCAT(id) as concat_ids FROM (SELECT id FROM " . $temp_tablename . " tt ORDER BY tt.id ASC LIMIT " . $limit . "," . $batchsize . ")  tt2 ";
+            $res_comma_seperated_temp_ids = DB::select($qry_comma_seperated_temp_ids);
             return $res_comma_seperated_temp_ids[0]->concat_ids;*/
 
-            //No GROUP_CONCAT because of string limit 
+            //No GROUP_CONCAT because of string limit
             $qry_comma_seperated_temp_ids = "SELECT id as concat_id FROM (SELECT id FROM " . $temp_tablename . " tt ORDER BY tt.id ASC LIMIT " . $limit . "," . $batchsize . ")  tt2 ";
 
             Log:info($qry_comma_seperated_temp_ids);
-            $res_comma_seperated_temp_ids = DB::select($qry_comma_seperated_temp_ids);     
-            $count_comma_seperated_temp_ids  = count($res_comma_seperated_temp_ids);
-            if($count_comma_seperated_temp_ids>0){
-                for($cnt=0;$cnt<$count_comma_seperated_temp_ids;$cnt++){
-                    $temp_table_ids[] = $res_comma_seperated_temp_ids[$cnt]->concat_id;     
+            $res_comma_seperated_temp_ids   = DB::select($qry_comma_seperated_temp_ids);
+            $count_comma_seperated_temp_ids = count($res_comma_seperated_temp_ids);
+            if ($count_comma_seperated_temp_ids > 0) {
+                for ($cnt = 0; $cnt < $count_comma_seperated_temp_ids; $cnt++) {
+                    $temp_table_ids[] = $res_comma_seperated_temp_ids[$cnt]->concat_id;
                 }
-                
+
             }
 
-            $temp_table_concat_ids = implode(",",$temp_table_ids);
+            $temp_table_concat_ids = implode(",", $temp_table_ids);
             return $temp_table_concat_ids;
-
-
 
         } catch (\Illuminate\Database\QueryException $ex) {
 
@@ -1229,7 +1237,7 @@ class AjCsvFileImport
         $file_prefix    = "aj_errorlog";
         // $folder         = storage_path('app/Ajency/Ajfileimport/errorlogs/');
         //$folder         = storage_path('app/Ajency/');
-        $folder = $import_libs->getMysqlTempDirectory() . "/Ajency/";
+        $folder = $import_libs->getTempImportExportDirectory() . "/Ajency/";
 
         $import_libs->createDirectoryIfDontExists($folder);
 
@@ -1239,7 +1247,8 @@ class AjCsvFileImport
         Log::info($errorlog_outfile_path);
         //echo $errorlog_outfile_path;
 
-        $file_path = str_replace("\\", "\\\\", $errorlog_outfile_path);
+        //$file_path = str_replace("\\", "\\\\", $errorlog_outfile_path);
+        $file_path = $import_libs->formatImportExportFilePath($errorlog_outfile_path);
 
         $temptable_db = new AjTable($temp_tablename);
 

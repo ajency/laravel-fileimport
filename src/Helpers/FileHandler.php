@@ -239,7 +239,7 @@ public function createDirectoryIfDontExists($filepath)
 {
 
 if (!$this->is_directory_exists($filepath)) {
-File::makeDirectory($filepath, 0775, true, true);
+File::makeDirectory($filepath, 0777, true, true);
 }
 
 }*/

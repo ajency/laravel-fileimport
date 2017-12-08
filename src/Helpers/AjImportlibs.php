@@ -7,6 +7,7 @@ use Ajency\Ajfileimport\Mail\AjSendMail;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use \Mail;
+use Log;
 
 /**
  * Class for aj importlibs.
@@ -29,11 +30,28 @@ class AjImportlibs
 
     }
 
-    public function createDirectoryIfDontExists($filepath)
+    /**
+     * Creates directory if don't exists with provided params ex: array('permissions'=>0777,'recursive'=>true,'force'=>true)
+     *
+     * @param      <type>  $filepath  The filepath
+     * @param      array   $params    The parameters
+     */
+    public function createDirectoryIfDontExists($filepath, $params = array())
     {
+        $default_params = array('permissions' => 0777, 'recursive' => true, 'force' => true);
+        $params         = array_merge($default_params, $params);
+        Log::info('createDirectoryIfDontExists:-----------------------------' );
+        Log::info($params );
+        extract($params);
 
         if (!$this->is_directory_exists($filepath)) {
-            File::makeDirectory($filepath, 0775, true, true);
+            $filepath = File::makeDirectory($filepath, $permissions, $recursive, $force);
+        }
+
+        if ($this->is_directory_exists($filepath)) {
+            return array('result' => false, 'errors' => array('Please check folder permissions. Directory "' . $filepath . '" cannot be created. Cannot proceed with import'),'logs'=>array());
+        } else {
+            return array('result' => true, 'errors' => array(),'logs'=>array());
         }
 
     }
@@ -141,7 +159,52 @@ class AjImportlibs
         $qry_get_mysql_temp_directory = "SHOW VARIABLES LIKE 'tmpdir'";
         $res_get_mysql_temp_directory = DB::select($qry_get_mysql_temp_directory);
         foreach ($res_get_mysql_temp_directory as $res_v) {
-            return $res_v->Value;
+            return str_replace("\\", "\\\\", $res_v->Value);
+        }
+
+    }
+
+    public function getMysqlSecureFilePrivDirectory()
+    {
+
+        $qry_get_mysql_securefilepriv_directory = "SHOW VARIABLES LIKE 'secure_file_priv'";
+        $res_get_mysql_securefilepriv_directory = DB::select($qry_get_mysql_securefilepriv_directory);
+        foreach ($res_get_mysql_securefilepriv_directory as $res_v) {
+            return str_replace("\\", "\\\\", $res_v->Value);
+        }
+
+    }
+
+    /**
+     * Get the temporary export directory where export/import files can be created.
+     *
+     * @return     string  The temporary export directory.
+     */
+    public function getTempImportExportDirectory()
+    {
+        if (config('ajimportdata.import_folder') != "") {
+
+            return config('ajimportdata.import_folder');
+
+        } else {
+
+            $securefilepriv_directory = $this->getMysqlSecureFilePrivDirectory();
+
+            if ($securefilepriv_directory != "" && $securefilepriv_directory != false && !is_null($securefilepriv_directory)) {
+
+                return $securefilepriv_directory;
+
+            } else {
+                $mysqltmp_directory = $this->getMysqlTempDirectory();
+
+                if ($mysqltmp_directory != "" && $mysqltmp_directory != false && !is_null($mysqltmp_directory)) {
+                    return $mysqltmp_directory;
+                } else {
+                    return '';
+                }
+
+            }
+
         }
 
     }
@@ -149,28 +212,33 @@ class AjImportlibs
     public function createTestImportFolder()
     {
 
-        $mysql_temp_dir = $this->getMysqlTempDirectory();
+        $import_export_temp_dir = $this->getTempImportExportDirectory();
 
-        if ($mysql_temp_dir == "" || is_null($mysql_temp_dir)) {
-            return array('result' => false, 'errors' => 'Mysql Temp directory is not set. Cannot proceed with import');
+        if ($import_export_temp_dir == "" || is_null($import_export_temp_dir || $import_export_temp_dir == false)) {
+            return array('result' => false, 'errors' => 'Import directory is not set. Cannot proceed with import. Set "import_folder" in config file or set Mysql secure_file_priv/tmp folder.');
         }
 
-        $ajency_folder = $this->getMysqlTempDirectory() . "/Ajency";
+        $ajency_folder = $import_export_temp_dir . "/Ajency/";
+
 
         if (!$this->is_directory_exists($ajency_folder)) {
 
-            $this->createDirectoryIfDontExists($ajency_folder);
+            $result_folder_create = $this->createDirectoryIfDontExists($ajency_folder);
+        }
+        else{
+            $result_folder_create['result'] = true;
         }
 
-        if ($this->is_directory_exists($ajency_folder)) {
+        if ($result_folder_create['result'] == true) {
 
-            $file_prefix           = "aj_test_file_create_";
+            $file_prefix = "aj_test_file_create_";
 
             $test_export_file_path = $this->generateUniqueOutfileName($file_prefix, $ajency_folder);
 
-            $file_path = str_replace("\\", "\\\\", $test_export_file_path);
+            //$file_path = str_replace("\\", "\\\\", $test_export_file_path);
+            $file_path =  $this->formatImportExportFilePath($test_export_file_path);
 
-            $qry_test = "SELECT  test_id, test_name INTO OUTFILE '" . $file_path . "'
+            $qry_test = "SELECT  'test_id', 'test_name' INTO OUTFILE '" . $file_path . "'
                                     FIELDS TERMINATED BY ','
                                     OPTIONALLY ENCLOSED BY '\"'
                                     LINES TERMINATED BY '\n'";
@@ -181,24 +249,33 @@ class AjImportlibs
 
                 if (!File::exists($test_export_file_path)) {
                     return array('result' => false, 'errors' => array("'" . $ajency_folder . "' Folder does not have write permission. Cannot proceed with import"));
-                    } else {
-                        return array('result' => true,'errors' =>false);
-                    }
-
-                } catch (\Illuminate\Database\QueryException $ex) {
-
-                    return array('result' => false, 'errors' => array($ex->getMessage()));
-
+                } else {
+                    return array('result' => true, 'errors' => array(),'logs'=>array());
                 }
 
+            } catch (\Illuminate\Database\QueryException $ex) {
+
+                $error_msg = $ex->getMessage();
+
+                if( stristr($error_msg,'create/write')!=false){
+                    $error_msg = "Please set write permission for folder '".$ajency_folder."' and Upload the file again.<br/> ".$error_msg ;
+                }
+                return array('result' => false, 'errors' => array($error_msg), 'logs'=>array());
+
             }
-            else {
-                return array('result'=>false ,'errors'=>array('Directory is not writable') ) ;
-            }
 
-
-
-             
+        } else {
+            return $result_folder_create;
         }
 
     }
+
+    public function formatImportExportFilePath($file_path)
+    {
+
+        $file_path = str_replace("\\", "\\\\", $file_path);
+        $file_path = str_replace("/", "//", $file_path);
+        return $file_path;
+    }
+
+}
