@@ -7,6 +7,7 @@ $ajimport_config['recipient'] = "parag@ajency.in";
 $ajimport_config['import_folder']  = "";//Folder with permission to write (do not use )
 
 $ajimport_config['temptablename'] = 'aj_import_temp';
+$ajimport_config['temptable_default_fields'] = array("tmp_source"=>'y');
 
 
 $ajimport_config['fileheader'] = array('Id', 'Company Name', 'Add', 'City', 'Pin Code', 'Reference', 'State', 'Phone1', 'Phone2', 'Mobile1', 'Mobile2', 'Email1', 'Email2', 'Year', 'Web', 'Business Type', 'Business Details');

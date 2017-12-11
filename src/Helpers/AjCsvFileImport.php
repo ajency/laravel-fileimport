@@ -418,6 +418,23 @@ class AjCsvFileImport
         return $qry__create_table;
     }
 
+
+    public function getTempTableDefaultFields(){
+
+        $qry_temp_default_fields = '';
+        $temtable_default_fields = config('ajimportdata.temptable_default_fields'); //Get file headers
+
+        $default_temp_field_cnt = count($temtable_default_fields);
+
+        if(count($default_temp_field_cnt)>0){
+            foreach ($temtable_default_fields as $key => $value) {
+                $qry_temp_default_fields .= ", `".$key."`  VARCHAR(250) NOT NULL DEFAULT '".$value."' ";
+            }
+        }
+
+        return $qry_temp_default_fields ;
+    }
+
     public function createTempTable()
     {
 
@@ -494,6 +511,8 @@ class AjCsvFileImport
 
         $qry__create_table .= $qry_childtable_insert_ids;
 
+        $qry__create_table .=$this->getTempTableDefaultFields();
+        
         $qry__create_table .= ", `aj_error_log`  LONGTEXT   ";
         $qry__create_table .= ", `aj_isvalid`  CHAR(1) NOT NULL DEFAULT '' ";
         $qry__create_table .= ", `aj_processed`  CHAR(1) NOT NULL DEFAULT 'n' ";
