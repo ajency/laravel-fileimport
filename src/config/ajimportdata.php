@@ -108,13 +108,38 @@ $ajimport_config['childtables'][] = array('name' => 'user_communications',
     'default_values'                                 => array("object_type" => "App\Listing", "type" => "email"), //array("user communication column name"=>"default value for the column")
 );
 
-$ajimport_config['childtables'][] = array('name' => 'listing_category',
+
+
+/* Example to insert fomma seperated fiel to multiple records in childtable*/
+/*$ajimport_config['childtables'][] = array('name' => 'listing_category',
     'is_mandatary_insertid'                          => 'no',
     'fields_map'                                     => array("listings_id" => "listing_id"), //'temp table field'=>'child table field'
     'default_values'                                 => array("object_type" => "App\Listing", "type" => "email"), //array("user communication column name"=>"default value for the column")
     'commafield_to_multirecords'                     => array('Business_Details' => 'category_id'), //Does not support for multiple comma seperated fields into new records as array here. If more than one field is of type comma seperated and needs to be seperate records, add it as seperate childtable record
     'default_values'                                 => array("core" => "1"), //array("user communication column name"=>"default value for the column")
+);*/
+
+
+
+
+
+
+
+
+
+
+/*Example configuration to make fields on table to multiple records on child table */
+$ajimport_config['childtables'][] = array('name' => 'listing_category',
+    'is_mandatary_insertid'                          => 'no',
+    'fields_map'                                     => array("listings_id" => "listing_id"), //'temp table field'=>'child table field'
+    'default_values'                                 => array("object_type" => "App\Listing", "type" => "email"), //array("user communication column name"=>"default value for the column")
+    'fields_to_multirecords'                        => array('category_id' => array('Email1','State') ), //Does not support for multiple comma seperated fields into new records as array here. If more than one field is of type comma seperated and needs to be seperate records, add it as seperate childtable record
+    'default_values'                                 => array("core" => "1"), //array("user communication column name"=>"default value for the column")
 );
+
+
+
+
 
 /* End Add Child tables here */
 

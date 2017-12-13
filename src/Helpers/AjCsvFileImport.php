@@ -927,8 +927,8 @@ class AjCsvFileImport
             $comma_field_conf = $child_table_conf['commafield_to_multirecords'];
 
             foreach ($comma_field_conf as $comma_key => $comma_value) {
-                //$comma_field_select = "SUBSTRING_INDEX(SUBSTRING_INDEX(" . $comma_key . ", ',', numbers.n), ',', -1) " . $comma_key;
-                $comma_field_select = "SUBSTRING_INDEX(SUBSTRING_INDEX(SUBSTRING_INDEX(" . $comma_key . ", ',', numbers.n), ',', -1),'|',1) " . $comma_key;//updated for array('34|slug1,4|slug2,12|slug3')
+                $comma_field_select = "SUBSTRING_INDEX(SUBSTRING_INDEX(" . $comma_key . ", ',', numbers.n), ',', -1) " . $comma_key;
+                //$comma_field_select = "SUBSTRING_INDEX(SUBSTRING_INDEX(SUBSTRING_INDEX(" . $comma_key . ", ',', numbers.n), ',', -1),'|',1) " . $comma_key;//updated for array('34|slug1,4|slug2,12|slug3')
 
                 $comma_field_from = "  (SELECT 1 n UNION ALL SELECT 2
    UNION ALL SELECT 3 UNION ALL SELECT 4 UNION ALL SELECT 5 UNION ALL SELECT 6 UNION ALL SELECT 7 UNION ALL SELECT 8 UNION ALL SELECT 9 UNION ALL SELECT 10 UNION ALL SELECT 11 UNION ALL SELECT 12 UNION ALL SELECT 13 UNION ALL SELECT 14 UNION ALL SELECT 15 UNION ALL SELECT 16 UNION ALL SELECT 17 UNION ALL SELECT 18 UNION ALL SELECT 19 UNION ALL SELECT 20) numbers INNER JOIN " . $temp_tablename . "
@@ -966,6 +966,52 @@ class AjCsvFileImport
 
         }
 
+
+        /*Selected columns in a record make new indivisual records*/
+        $serialize_string = "";
+        $fields_to_multirecords_from = "";
+        if (isset($child_table_conf['fields_to_multirecords'])) {
+
+            $fields_to_multirecords_conf = $child_table_conf['fields_to_multirecords'];
+
+            foreach ($fields_to_multirecords_conf as $fields_to_multirecord_ky => $fields_to_multirecord_vl) {
+                $fields_to_multirecord_field = $fields_to_multirecord_vl;
+                $fields_to_multirecord_field_key = $fields_to_multirecord_ky;
+            }  
+            $child_fields_ar[]  = $fields_to_multirecord_field_key;
+
+            if(count($fields_to_multirecords_conf)>0){
+
+
+                $fields_to_multirecords_from ='';
+                $fields_to_multirecords_select = ' field_to_multi_recordstble.val '.$fields_to_multirecord_field_key.' ';
+
+                $cnt_field_to_multirecords = 0;
+                foreach ($fields_to_multirecord_field as $fields_to_multirecord) {
+
+                    if($cnt_field_to_multirecords==0){
+                        $fields_to_multirecords_from.= ' ( ';
+                    }
+                    else if($cnt_field_to_multirecords>0){
+                        $fields_to_multirecords_from.= ' UNION ';
+                    }
+
+                    $field_to_multi_alias_tbl_name = "a".$cnt_field_to_multirecords;
+
+                    $fields_to_multirecords_from.= ' SELECT '.$field_to_multi_alias_tbl_name.'.`id` as `id`, '.$field_to_multi_alias_tbl_name.'.`'.$fields_to_multirecord.'` as val  FROM `'.$temp_tablename.'` '.$field_to_multi_alias_tbl_name.' ';     
+
+
+                    $cnt_field_to_multirecords++;
+                }
+
+                $fields_to_multirecords_from.=" ) field_to_multi_recordstble ";
+            }
+           
+
+        }
+
+
+
         $child_fields = implode("`,`", $child_fields_ar);
 
         $file_prefix = "aj_" . $child_table_name;
@@ -994,6 +1040,7 @@ class AjCsvFileImport
 
             $qry_select_valid_data = "SELECT `" . $temp_fields . "` ";
 
+            /*Form the select query based on configuration */
             if ($child_default_values_string != '') {
                 $qry_select_valid_data .= ",'" . $child_default_values_string . "'";
             }
@@ -1005,12 +1052,30 @@ class AjCsvFileImport
                 $qry_select_valid_data .= "," . $comma_field_select;
             }
 
+            if (isset($child_table_conf['fields_to_multirecords']) && $fields_to_multirecords_select != "") {
+                $qry_select_valid_data .= "," . $fields_to_multirecords_select;
+            }
+
+
+
+            /* Form the from query based on configuration */
+            $from_field_str="";
+            if($comma_field_from != ""){
+                $from_field_str = $comma_field_from . " WHERE id in " ;
+            }
+            else if($fields_to_multirecords_from!=""){
+                 $from_field_str = $fields_to_multirecords_from . " INNER JOIN ".$temp_tablename." outtable  on outtable.id = field_to_multi_recordstble.id   WHERE outtable.id in " ;
+            }
+            else{
+                 $from_field_str =  $temp_tablename . " outtable WHERE outtable.id in " ; 
+            }
+
             $qry_select_valid_data .= " INTO OUTFILE '" . $file_path . "'
                                     FIELDS TERMINATED BY ','
                                     OPTIONALLY ENCLOSED BY '\"'
                                     ESCAPED BY ''
                                     LINES TERMINATED BY '\n'
-                                    FROM " . ($comma_field_from != "" ? $comma_field_from . " WHERE id in " : $temp_tablename . " outtable WHERE outtable.id in ") . " (SELECT id FROM (SELECT id FROM " . $temp_tablename . " tt   ORDER BY tt.id ASC LIMIT " . $limit . "," . $batchsize . ") tt2 )  AND  aj_isvalid!='N' order by id ASC";
+                                    FROM " . $from_field_str . " (SELECT id FROM (SELECT id FROM " . $temp_tablename . " tt   ORDER BY tt.id ASC LIMIT " . $limit . "," . $batchsize . ") tt2 )  AND  aj_isvalid!='N' order by outtable.id ASC";
 
             Log::info('<br/> \n  validchilddata OUTFILE query  :----------------------------------');
             Log::info("filepath" . $file_path);
