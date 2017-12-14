@@ -78,8 +78,7 @@ $ajimport_config['childtables'][] = array('name' => 'listings',
 
      /* multiple columns as array value to field on child table*/    
     'colstoarrayfield'                                => array('highlights' => array('Email1','State')), 
-
-    ),
+    
 
 );
 
