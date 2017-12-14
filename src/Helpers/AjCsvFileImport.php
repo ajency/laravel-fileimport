@@ -57,7 +57,7 @@ class AjCsvFileImport
         $this->msg               = "<br/> Checking the file permissions ....";
         $result_file_permissions = $import_libs->createTestImportFolder();
 
-        if (count($result_file_permissions['errors'])>0) {
+        if (count($result_file_permissions['errors']) > 0) {
             $this->set_ajx_return_logs($result_file_permissions);
             return response()->json($this->ajx_return_logs());
         }
@@ -136,10 +136,9 @@ class AjCsvFileImport
     {
         $this->logs   = array_merge($this->logs, $params['logs']);
         $this->errors = array_merge($this->errors, $params['errors']);
-        if(isset($params['msg'])){
-            $this->msg    = $this->msg . $params['msg'];
+        if (isset($params['msg'])) {
+            $this->msg = $this->msg . $params['msg'];
         }
-
 
     }
 
@@ -418,21 +417,21 @@ class AjCsvFileImport
         return $qry__create_table;
     }
 
-
-    public function getTempTableDefaultFields(){
+    public function getTempTableDefaultFields()
+    {
 
         $qry_temp_default_fields = '';
         $temtable_default_fields = config('ajimportdata.temptable_default_fields'); //Get file headers
 
         $default_temp_field_cnt = count($temtable_default_fields);
 
-        if(count($default_temp_field_cnt)>0){
+        if (count($default_temp_field_cnt) > 0) {
             foreach ($temtable_default_fields as $key => $value) {
-                $qry_temp_default_fields .= ", `".$key."`  VARCHAR(250) NOT NULL DEFAULT '".$value."' ";
+                $qry_temp_default_fields .= ", `" . $key . "`  VARCHAR(250) NOT NULL DEFAULT '" . $value . "' ";
             }
         }
 
-        return $qry_temp_default_fields ;
+        return $qry_temp_default_fields;
     }
 
     public function createTempTable()
@@ -511,8 +510,8 @@ class AjCsvFileImport
 
         $qry__create_table .= $qry_childtable_insert_ids;
 
-        $qry__create_table .=$this->getTempTableDefaultFields();
-        
+        $qry__create_table .= $this->getTempTableDefaultFields();
+
         $qry__create_table .= ", `aj_error_log`  LONGTEXT   ";
         $qry__create_table .= ", `aj_isvalid`  CHAR(1) NOT NULL DEFAULT '' ";
         $qry__create_table .= ", `aj_processed`  CHAR(1) NOT NULL DEFAULT 'n' ";
@@ -935,7 +934,6 @@ class AjCsvFileImport
   ON CHAR_LENGTH(" . $comma_key . ")
      -CHAR_LENGTH(REPLACE(" . $comma_key . ", ',', ''))>=numbers.n-1 ";
 
-
             }
 
         }
@@ -966,51 +964,79 @@ class AjCsvFileImport
 
         }
 
+        /** If colstoarrayfield  has been defined (Multiple column values goes as the array to single field on child table) */
+        $colstoarrayfield_string ="";
+        if (isset($child_table_conf['colstoarrayfield'])) {
+
+            $colstoarrayfield_conf = $child_table_conf['colstoarrayfield'];
+
+            $colstoarrayfield_string = 'CONCAT("["';
+            foreach ($colstoarrayfield_conf as $target_array_field => $array_tmpfield) {
+
+                $current_serialize_field_cnt = count($array_tmpfield);
+
+                $cnt_cols_to_array = 0;
+                foreach ($array_tmpfield as $serialize_key => $array_value) {
+
+                    $array_field_collection[] = $array_value;
+
+                    $colstoarrayfield_string .= '," ';
+                    if ($cnt_cols_to_array > 0) {
+                        $colstoarrayfield_string .= ',","';
+                    }
+                    $colstoarrayfield_string .= '\'",' . $array_value . ',"\'"';
+
+                    $cnt_cols_to_array++;
+
+                }
+
+                // $colstoarrayfield_string.= implode('.\'","\'.',$array_field_collection);
+
+                $child_fields_ar[] = $target_array_field;
+
+            }
+            $colstoarrayfield_string .= ',"]")';
+
+        }
 
         /*Selected columns in a record make new indivisual records*/
-        $serialize_string = "";
+
         $fields_to_multirecords_from = "";
         if (isset($child_table_conf['fields_to_multirecords'])) {
 
             $fields_to_multirecords_conf = $child_table_conf['fields_to_multirecords'];
 
             foreach ($fields_to_multirecords_conf as $fields_to_multirecord_ky => $fields_to_multirecord_vl) {
-                $fields_to_multirecord_field = $fields_to_multirecord_vl;
+                $fields_to_multirecord_field     = $fields_to_multirecord_vl;
                 $fields_to_multirecord_field_key = $fields_to_multirecord_ky;
-            }  
-            $child_fields_ar[]  = $fields_to_multirecord_field_key;
+            }
+            $child_fields_ar[] = $fields_to_multirecord_field_key;
 
-            if(count($fields_to_multirecords_conf)>0){
+            if (count($fields_to_multirecords_conf) > 0) {
 
-
-                $fields_to_multirecords_from ='';
-                $fields_to_multirecords_select = ' field_to_multi_recordstble.val '.$fields_to_multirecord_field_key.' ';
+                $fields_to_multirecords_from   = '';
+                $fields_to_multirecords_select = ' field_to_multi_recordstble.val ' . $fields_to_multirecord_field_key . ' ';
 
                 $cnt_field_to_multirecords = 0;
                 foreach ($fields_to_multirecord_field as $fields_to_multirecord) {
 
-                    if($cnt_field_to_multirecords==0){
-                        $fields_to_multirecords_from.= ' ( ';
+                    if ($cnt_field_to_multirecords == 0) {
+                        $fields_to_multirecords_from .= ' ( ';
+                    } else if ($cnt_field_to_multirecords > 0) {
+                        $fields_to_multirecords_from .= ' UNION ';
                     }
-                    else if($cnt_field_to_multirecords>0){
-                        $fields_to_multirecords_from.= ' UNION ';
-                    }
 
-                    $field_to_multi_alias_tbl_name = "a".$cnt_field_to_multirecords;
+                    $field_to_multi_alias_tbl_name = "a" . $cnt_field_to_multirecords;
 
-                    $fields_to_multirecords_from.= ' SELECT '.$field_to_multi_alias_tbl_name.'.`id` as `id`, '.$field_to_multi_alias_tbl_name.'.`'.$fields_to_multirecord.'` as val  FROM `'.$temp_tablename.'` '.$field_to_multi_alias_tbl_name.' ';     
-
+                    $fields_to_multirecords_from .= ' SELECT ' . $field_to_multi_alias_tbl_name . '.`id` as `id`, ' . $field_to_multi_alias_tbl_name . '.`' . $fields_to_multirecord . '` as val  FROM `' . $temp_tablename . '` ' . $field_to_multi_alias_tbl_name . ' ';
 
                     $cnt_field_to_multirecords++;
                 }
 
-                $fields_to_multirecords_from.=" ) field_to_multi_recordstble ";
+                $fields_to_multirecords_from .= " ) field_to_multi_recordstble ";
             }
-           
 
         }
-
-
 
         $child_fields = implode("`,`", $child_fields_ar);
 
@@ -1048,6 +1074,9 @@ class AjCsvFileImport
             if ($serialize_string != '') {
                 $qry_select_valid_data .= "," . $serialize_string;
             }
+            if ($colstoarrayfield_string != '') {
+                $qry_select_valid_data .= "," . $colstoarrayfield_string;
+            }
             if (isset($child_table_conf['commafield_to_multirecords']) && $comma_field_select != "") {
                 $qry_select_valid_data .= "," . $comma_field_select;
             }
@@ -1056,18 +1085,14 @@ class AjCsvFileImport
                 $qry_select_valid_data .= "," . $fields_to_multirecords_select;
             }
 
-
-
             /* Form the from query based on configuration */
-            $from_field_str="";
-            if($comma_field_from != ""){
-                $from_field_str = $comma_field_from . " WHERE id in " ;
-            }
-            else if($fields_to_multirecords_from!=""){
-                 $from_field_str = $fields_to_multirecords_from . " INNER JOIN ".$temp_tablename." outtable  on outtable.id = field_to_multi_recordstble.id   WHERE outtable.id in " ;
-            }
-            else{
-                 $from_field_str =  $temp_tablename . " outtable WHERE outtable.id in " ; 
+            $from_field_str = "";
+            if ($comma_field_from != "") {
+                $from_field_str = $comma_field_from . " WHERE id in ";
+            } else if ($fields_to_multirecords_from != "") {
+                $from_field_str = $fields_to_multirecords_from . " INNER JOIN " . $temp_tablename . " outtable  on outtable.id = field_to_multi_recordstble.id   WHERE outtable.id in ";
+            } else {
+                $from_field_str = $temp_tablename . " outtable WHERE outtable.id in ";
             }
 
             $qry_select_valid_data .= " INTO OUTFILE '" . $file_path . "'

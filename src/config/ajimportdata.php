@@ -74,7 +74,10 @@ $ajimport_config['childtables'][] = array('name' => 'listings',
     'columnupdatevalues'                             => array('Business_Type' => array("Wholeseller" => 11, "Retailer" => 12, "Manufacturer" => 13)),
 
     /*serialize array form at array('column on tagle'=>array of values to be serialized where key will be a static provided by user and value will be field from temp table)    */
-    'serializevalues'                                => array('other_details' => array('website' => 'Web', 'establish_year' => 'Year'),
+    'serializevalues'                                => array('other_details' => array('website' => 'Web', 'establish_year' => 'Year')),
+
+     /* multiple columns as array value to field on child table*/    
+    'colstoarrayfield'                                => array('highlights' => array('Email1','State')), 
 
     ),
 
