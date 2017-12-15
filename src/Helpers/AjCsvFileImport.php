@@ -474,8 +474,8 @@ class AjCsvFileImport
             $childtable[$child_count]->setTableSchema();
             $qry__create_table .= $this->tempTableQueryByTable($child_data, $childtable[$child_count], $is_child_table);
 
-            //if (isset($child_data['insertid_temptable'])) {
-            if (isset($child_data['insertid_mtable'])) {
+            if (isset($child_data['insertid_temptable'])) {
+            //if (isset($child_data['insertid_mtable'])) {
 
                 $temptablefield_for_child_insertid = $this->getFormatedFieldName($child_data['name']) . "_id";
 
