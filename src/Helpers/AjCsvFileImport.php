@@ -134,8 +134,17 @@ class AjCsvFileImport
 
     public function set_ajx_return_logs($params)
     {
-        $this->logs   = array_merge($this->logs, $params['logs']);
-        $this->errors = array_merge($this->errors, $params['errors']);
+        
+        if(isset($params['logs'])){
+
+            $this->logs   = array_merge($this->logs, $params['logs']);    
+        }
+        
+        if(isset($params['errors'])){
+             $this->errors = array_merge($this->errors, $params['errors']);
+        }
+        
+       
         if (isset($params['msg'])) {
             $this->msg = $this->msg . $params['msg'];
         }

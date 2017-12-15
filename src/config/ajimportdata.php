@@ -14,6 +14,8 @@ $ajimport_config['temptable_default_fields'] = array("tmp_source" => 'y');
 
 $ajimport_config['fileheader'] = array('Id', 'Company Name', 'Add', 'City', 'Pin Code', 'Reference', 'State', 'Phone1', 'Phone2', 'Mobile1', 'Mobile2', 'Email1', 'Email2', 'Year', 'Web', 'Business Type', 'Business Details');
 
+ 
+
 /**
  * config to update any id column(for ex user_id) based on set of fields from child table(for ex user_communication table)
  */
@@ -24,10 +26,6 @@ $ajimport_config['tables_to_update_temp'][] = array(
     'fields_map_to_update_temptable_child_id'         => array("Email1" => "value"),
     'default_fields_map_to_update_temptable_child_id' => array("type" => "email", "object_type" => "App\User"),
 ); //'temp table field'=>'child table field')
-
-
-
-
 
 
 
