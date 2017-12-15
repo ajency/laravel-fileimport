@@ -549,6 +549,178 @@ class AjCsvFileImport
 
     }
 
+    /*//Read the config and build array by key(field insert id to update) and child tables conf
+    public function getSortedTempTableChildIdUpdateConfig()
+    {
+
+    $tables_to_update_temp                      = config('ajimportdata.tables_to_update_temp');
+    $temp_field_ids_to_update_by_existing_child = [];
+
+    foreach ($tables_to_update_temp as $key => $value) {
+
+    $tmp_field_toupdate_arr = array_keys($value['insertid_temptable']);
+
+    $temp_field_ids_to_update_by_existing_child[$tmp_field_toupdate_arr[0]][] = array(
+    'tablename'                                       => $value['name'],
+    'fields_map_to_update_temptable_child_id'         => $value['fields_map_to_update_temptable_child_id'],
+    'default_fields_map_to_update_temptable_child_id' => $value['default_fields_map_to_update_temptable_child_id'],
+
+    )
+    }
+
+    $this->temptbl_fields_to_update_by_childid_conf = $temp_field_ids_to_update_by_existing_child;
+
+    }
+
+    public function updateTempTableIdFieldsWithExistingRecords($tmpfield_to_update, $params)
+    {
+
+    $import_libs      = new AjImportlibs();
+    $child_table_conf = $params['childtable'];
+
+    $total_childs        = $params['total_childs'];
+    $total_batches       = $params['total_loops'];
+    $current_child_count = $params['current_child_count'];
+
+    $loop_count = $params['current_loop_count'];
+
+    $temp_tablename = config('ajimportdata.temptablename');
+
+    $child_field_maps = $child_table_conf['fields_map'];
+
+    $child_table_name = $child_table_conf['name'];
+
+    $batchsize = config('ajimportdata.batchsize');
+
+    $limit = $loop_count * $batchsize;
+
+    $temp_fields_ar = array_keys($child_field_maps);
+
+    Log::info('temp_fields_ar');
+    Log::info($temp_fields_ar);
+    $temp_fields = implode("`,`", $temp_fields_ar);
+
+    $child_fields_ar = array_values($child_field_maps);
+
+    if (isset($child_table_conf['insertid_temptable'])) {
+
+    $tmp_tbl_child_insert_id = array_keys($child_table_conf['insertid_temptable']);
+    if (isset($this->temptbl_fields_to_update_by_childid_conf[$tmpfield_to_update])) {
+
+    $temp_tbl_child_field_update_conf_ar = $this->temptbl_fields_to_update_by_childid_conf[$tmpfield_to_update];
+
+    foreach ($temp_tbl_child_field_update_conf_ar as  $value) {
+    if($value['tablename']==$child_table_name){
+
+    }
+    }
+
+    }
+
+    }
+
+    }*/
+
+    //Read the config and build array by key(field insert id to update) and child tables conf
+    public function update_field_temp_tbl_with_existing_child_records_by_conf($params)
+    {
+
+        $import_libs      = new AjImportlibs();
+        $child_table_conf = $params['childtable'];
+
+        $total_childs        = $params['total_childs'];
+        $total_batches       = $params['total_loops'];
+        $current_child_count = $params['current_child_count'];
+
+        $loop_count = $params['current_loop_count'];
+
+        $temp_tablename = config('ajimportdata.temptablename');
+
+        $child_field_maps = $child_table_conf['fields_map'];
+
+        $child_table_name = $child_table_conf['name'];
+
+        $batchsize = config('ajimportdata.batchsize');
+
+        $limit = $loop_count * $batchsize;
+
+        $tables_to_update_temp                      = config('ajimportdata.tables_to_update_temp');
+        $temp_field_ids_to_update_by_existing_child = [];
+
+        $temp_table_ids_by_batch = $this->getTempTableIdsByBatch($limit, $batchsize);
+
+        foreach ($tables_to_update_temp as $tables_to_update_temp) {
+
+            $tmp_field_toupdate_arr = array_keys($tables_to_update_temp['insertid_temptable']);
+            $child_update_id_arr    = array_values($tables_to_update_temp['insertid_temptable']);
+
+            $child_insert_id_on_temp_table = $tmp_field_toupdate_arr[0];
+            $child_update_id               = $child_update_id_arr[0];
+
+            $fields_map_to_update_temptable_child_id = $tables_to_update_temp['fields_map_to_update_temptable_child_id'];
+
+            $cnt_where = 0;
+            $where_condition = '';
+
+
+            foreach ($fields_map_to_update_temptable_child_id as $tempfield => $childfield) {
+
+                $where_condition .= " AND ";
+
+                /*$where_condition .= " tmpdata." . $tempfield . " COLLATE utf8_general_ci = " . "childtable." . $childfield . " COLLATE
+                utf8_general_ci ";*/
+                $where_condition .= " tmpdata." . $tempfield . "  = " . "childtable." . str_replace('\\', '\\\\', $childfield) . " ";
+                $cnt_where++;
+            }
+
+            $default_fields_map_to_update_temptable_child_id = $tables_to_update_temp['default_fields_map_to_update_temptable_child_id'];
+
+            foreach ($default_fields_map_to_update_temptable_child_id as $tempfield => $childfield_defaultvalue) {
+
+                $where_condition .= " AND ";
+
+                /*$where_condition .= " tmpdata." . $tempfield . " COLLATE utf8_general_ci = " . "childtable." . $childfield . " COLLATE
+                utf8_general_ci ";*/
+                $where_condition .= " childtable." . $tempfield . "  = " . " '" .str_replace('\\', '\\\\',  $childfield_defaultvalue) . "' ";
+                $cnt_where++;
+            }
+ 
+            $qry_update_child_ids = "UPDATE " . $temp_tablename . " tmpdata, " . $tables_to_update_temp['name'] . " childtable
+                SET
+                    tmpdata." . $child_insert_id_on_temp_table . " =  CAST(childtable." . $child_update_id . " as CHAR(50))
+                WHERE  tmpdata.id in (" . $temp_table_ids_by_batch . ")  AND  tmpdata.aj_isvalid!='N'" . $where_condition;
+
+            try {
+
+                Log::info('<br/> \n  CUSTOM-UPDATER child ids(' . $child_table_conf['name'] . ') on temp table   :----------------------------------');
+
+                Log::info($qry_update_child_ids);
+
+                $res_update = DB::update($qry_update_child_ids);
+                Log::info('res_update===============================');
+                Log::info($res_update);
+
+                $this->exportValidTemptableDataToFile($params);
+
+                //update valid rows in temp table with the valid inserts on child table.
+
+            } catch (\Illuminate\Database\QueryException $ex) {
+
+                // Note any method of class PDOException can be called on $ex.
+                $this->errors[] = $ex->getMessage();
+
+                $msg_log = json_encode(array('table' => $child_table_conf['name'], 'limit' => $limit, 'batchsize' => $batchsize, 'errormsg' => $ex->getMessage()));
+
+                $this->setBatchInvalidData($temp_tablename, $limit, $batchsize, $msg_log);
+
+            }
+
+        }
+
+        $this->temptbl_fields_to_update_by_childid_conf = $temp_field_ids_to_update_by_existing_child;
+
+    }
+
     public function loadFiledatainTempTable($real_file_path, $file_headers, $temp_tablename)
     {
 
@@ -841,7 +1013,13 @@ class AjCsvFileImport
             $temp_table_validator->validateField($temp_field_name, $child_table_schema[$child_field_name], $loop_count);
 
         }
-        $this->exportValidTemptableDataToFile($params);
+ 
+
+        if (count(config(['ajimportdata.tables_to_update_temp']) > 0)) {
+            $this->update_field_temp_tbl_with_existing_child_records_by_conf($params);
+        } else {
+            $this->exportValidTemptableDataToFile($params);
+        }
 
         /* $job_params = array('childtable' => $child_table_conf, 'loop_count' => $loop_count, 'type' => 'insertvalidchilddata');
         AjImportDataJob::dispatch($job_params)->onQueue('insertvalidchilddata');*/
@@ -965,7 +1143,7 @@ class AjCsvFileImport
         }
 
         /** If colstoarrayfield  has been defined (Multiple column values goes as the array to single field on child table) */
-        $colstoarrayfield_string ="";
+        $colstoarrayfield_string = "";
         if (isset($child_table_conf['colstoarrayfield'])) {
 
             $colstoarrayfield_conf = $child_table_conf['colstoarrayfield'];
@@ -1061,6 +1239,20 @@ class AjCsvFileImport
         //$file_path = str_replace("\\", "\\\\", $child_outfile_name);
 
         $file_path = $import_libs->formatImportExportFilePath($child_outfile_name);
+        $additional_where_condn ="";
+
+        if(isset($child_table_conf['insertid_temptable'])) {
+
+            $tmp_tbl_child_insert_id_arr = array_keys($child_table_conf['insertid_temptable']);
+
+            if (isset($tmp_tbl_child_insert_id_arr[0])) {
+
+                if ($tmp_tbl_child_insert_id_arr[0]) {
+                    $additional_where_condn = " AND ( outtable." . $tmp_tbl_child_insert_id_arr[0] . "=''  ||  outtable." . $tmp_tbl_child_insert_id_arr[0] . " IS NULL) ";
+                }
+            }
+
+        }
 
         try {
 
@@ -1100,7 +1292,7 @@ class AjCsvFileImport
                                     OPTIONALLY ENCLOSED BY '\"'
                                     ESCAPED BY ''
                                     LINES TERMINATED BY '\n'
-                                    FROM " . $from_field_str . " (SELECT id FROM (SELECT id FROM " . $temp_tablename . " tt   ORDER BY tt.id ASC LIMIT " . $limit . "," . $batchsize . ") tt2 )  AND  aj_isvalid!='N' order by outtable.id ASC";
+                                    FROM " . $from_field_str . " (SELECT id FROM (SELECT id FROM " . $temp_tablename . " tt   ORDER BY tt.id ASC LIMIT " . $limit . "," . $batchsize . ") tt2 )  AND  aj_isvalid!='N' ".$additional_where_condn." order by outtable.id ASC";
 
             Log::info('<br/> \n  validchilddata OUTFILE query  :----------------------------------');
             Log::info("filepath" . $file_path);
