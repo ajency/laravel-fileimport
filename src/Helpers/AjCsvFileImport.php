@@ -477,10 +477,17 @@ class AjCsvFileImport
             if (isset($child_data['insertid_temptable'])) {
             //if (isset($child_data['insertid_mtable'])) {
 
-                $temptablefield_for_child_insertid = $this->getFormatedFieldName($child_data['name']) . "_id";
+                $temp_child_insert_id_arr  = array_keys($child_data['insertid_temptable']);
+                $temp_child_insert_id  = $temp_child_insert_id_arr[0];
 
-                $qry_childtable_insert_ids .= " ," . $temptablefield_for_child_insertid . " INT ";
-                $qry_indexes .= ", INDEX USING BTREE(" . $temptablefield_for_child_insertid . ")";
+
+                $temptablefield_for_child_insertid = $this->getFormatedFieldName($temp_child_insert_id);
+                if(isset($this->temptable_fields[$temptablefield_for_child_insertid])){
+                    $qry_childtable_insert_ids .= " ," . $temptablefield_for_child_insertid . " INT ";
+                    $qry_indexes .= ", INDEX USING BTREE(" . $temptablefield_for_child_insertid . ")";
+                }
+
+                
             }
 
             if (isset($child_data['field_slug'])) {
@@ -656,74 +663,78 @@ class AjCsvFileImport
         $tables_to_update_temp                      = config('ajimportdata.tables_to_update_temp');
         $temp_field_ids_to_update_by_existing_child = [];
 
-        $temp_table_ids_by_batch = $this->getTempTableIdsByBatch($limit, $batchsize);
+        if(!is_null($tables_to_update_temp)){
+            
 
-        foreach ($tables_to_update_temp as $tables_to_update_temp) {
+            $temp_table_ids_by_batch = $this->getTempTableIdsByBatch($limit, $batchsize);
 
-            $tmp_field_toupdate_arr = array_keys($tables_to_update_temp['insertid_temptable']);
-            $child_update_id_arr    = array_values($tables_to_update_temp['insertid_temptable']);
+            foreach ($tables_to_update_temp as $tables_to_update_temp) {
 
-            $child_insert_id_on_temp_table = $tmp_field_toupdate_arr[0];
-            $child_update_id               = $child_update_id_arr[0];
+                $tmp_field_toupdate_arr = array_keys($tables_to_update_temp['insertid_temptable']);
+                $child_update_id_arr    = array_values($tables_to_update_temp['insertid_temptable']);
 
-            $fields_map_to_update_temptable_child_id = $tables_to_update_temp['fields_map_to_update_temptable_child_id'];
+                $child_insert_id_on_temp_table = $tmp_field_toupdate_arr[0];
+                $child_update_id               = $child_update_id_arr[0];
 
-            $cnt_where = 0;
-            $where_condition = '';
+                $fields_map_to_update_temptable_child_id = $tables_to_update_temp['fields_map_to_update_temptable_child_id'];
+
+                $cnt_where = 0;
+                $where_condition = '';
 
 
-            foreach ($fields_map_to_update_temptable_child_id as $tempfield => $childfield) {
+                foreach ($fields_map_to_update_temptable_child_id as $tempfield => $childfield) {
 
-                $where_condition .= " AND ";
+                    $where_condition .= " AND ";
 
-                /*$where_condition .= " tmpdata." . $tempfield . " COLLATE utf8_general_ci = " . "childtable." . $childfield . " COLLATE
-                utf8_general_ci ";*/
-                $where_condition .= " tmpdata." . $tempfield . "  = " . "childtable." . str_replace('\\', '\\\\', $childfield) . " ";
-                $cnt_where++;
+                    /*$where_condition .= " tmpdata." . $tempfield . " COLLATE utf8_general_ci = " . "childtable." . $childfield . " COLLATE
+                    utf8_general_ci ";*/
+                    $where_condition .= " tmpdata." . $tempfield . "  = " . "childtable." . str_replace('\\', '\\\\', $childfield) . " ";
+                    $cnt_where++;
+                }
+
+                $default_fields_map_to_update_temptable_child_id = $tables_to_update_temp['default_fields_map_to_update_temptable_child_id'];
+
+                foreach ($default_fields_map_to_update_temptable_child_id as $tempfield => $childfield_defaultvalue) {
+
+                    $where_condition .= " AND ";
+
+                    /*$where_condition .= " tmpdata." . $tempfield . " COLLATE utf8_general_ci = " . "childtable." . $childfield . " COLLATE
+                    utf8_general_ci ";*/
+                    $where_condition .= " childtable." . $tempfield . "  = " . " '" .str_replace('\\', '\\\\',  $childfield_defaultvalue) . "' ";
+                    $cnt_where++;
+                }
+     
+                $qry_update_child_ids = "UPDATE " . $temp_tablename . " tmpdata, " . $tables_to_update_temp['name'] . " childtable
+                    SET
+                        tmpdata." . $child_insert_id_on_temp_table . " =  CAST(childtable." . $child_update_id . " as CHAR(50))
+                    WHERE  tmpdata.id in (" . $temp_table_ids_by_batch . ")  AND  tmpdata.aj_isvalid!='N'" . $where_condition;
+
+                try {
+
+                    Log::info('<br/> \n  CUSTOM-UPDATER child ids(' . $child_table_conf['name'] . ') on temp table   :----------------------------------');
+
+                    Log::info($qry_update_child_ids);
+
+                    $res_update = DB::update($qry_update_child_ids);
+                    Log::info('res_update===============================');
+                    Log::info($res_update);
+
+                    $this->exportValidTemptableDataToFile($params);
+
+                    //update valid rows in temp table with the valid inserts on child table.
+
+                } catch (\Illuminate\Database\QueryException $ex) {
+
+                    // Note any method of class PDOException can be called on $ex.
+                    $this->errors[] = $ex->getMessage();
+
+                    $msg_log = json_encode(array('table' => $child_table_conf['name'], 'limit' => $limit, 'batchsize' => $batchsize, 'errormsg' => $ex->getMessage()));
+
+                    $this->setBatchInvalidData($temp_tablename, $limit, $batchsize, $msg_log);
+
+                }
+
             }
-
-            $default_fields_map_to_update_temptable_child_id = $tables_to_update_temp['default_fields_map_to_update_temptable_child_id'];
-
-            foreach ($default_fields_map_to_update_temptable_child_id as $tempfield => $childfield_defaultvalue) {
-
-                $where_condition .= " AND ";
-
-                /*$where_condition .= " tmpdata." . $tempfield . " COLLATE utf8_general_ci = " . "childtable." . $childfield . " COLLATE
-                utf8_general_ci ";*/
-                $where_condition .= " childtable." . $tempfield . "  = " . " '" .str_replace('\\', '\\\\',  $childfield_defaultvalue) . "' ";
-                $cnt_where++;
-            }
- 
-            $qry_update_child_ids = "UPDATE " . $temp_tablename . " tmpdata, " . $tables_to_update_temp['name'] . " childtable
-                SET
-                    tmpdata." . $child_insert_id_on_temp_table . " =  CAST(childtable." . $child_update_id . " as CHAR(50))
-                WHERE  tmpdata.id in (" . $temp_table_ids_by_batch . ")  AND  tmpdata.aj_isvalid!='N'" . $where_condition;
-
-            try {
-
-                Log::info('<br/> \n  CUSTOM-UPDATER child ids(' . $child_table_conf['name'] . ') on temp table   :----------------------------------');
-
-                Log::info($qry_update_child_ids);
-
-                $res_update = DB::update($qry_update_child_ids);
-                Log::info('res_update===============================');
-                Log::info($res_update);
-
-                $this->exportValidTemptableDataToFile($params);
-
-                //update valid rows in temp table with the valid inserts on child table.
-
-            } catch (\Illuminate\Database\QueryException $ex) {
-
-                // Note any method of class PDOException can be called on $ex.
-                $this->errors[] = $ex->getMessage();
-
-                $msg_log = json_encode(array('table' => $child_table_conf['name'], 'limit' => $limit, 'batchsize' => $batchsize, 'errormsg' => $ex->getMessage()));
-
-                $this->setBatchInvalidData($temp_tablename, $limit, $batchsize, $msg_log);
-
-            }
-
         }
 
         $this->temptbl_fields_to_update_by_childid_conf = $temp_field_ids_to_update_by_existing_child;
@@ -1023,12 +1034,17 @@ class AjCsvFileImport
 
         }
  
-
-        if (count(config(['ajimportdata.tables_to_update_temp']) > 0)) {
-            $this->update_field_temp_tbl_with_existing_child_records_by_conf($params);
-        } else {
+        $tables_to_update_temp = config(['ajimportdata.tables_to_update_temp']); 
+        if(is_null($tables_to_update_temp)){
             $this->exportValidTemptableDataToFile($params);
         }
+        else{
+            if (count(config(['ajimportdata.tables_to_update_temp']) > 0)) {
+                $this->update_field_temp_tbl_with_existing_child_records_by_conf($params);
+            }
+        }
+
+         
 
         /* $job_params = array('childtable' => $child_table_conf, 'loop_count' => $loop_count, 'type' => 'insertvalidchilddata');
         AjImportDataJob::dispatch($job_params)->onQueue('insertvalidchilddata');*/

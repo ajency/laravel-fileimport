@@ -200,6 +200,7 @@ class AjTable
     public function getUniqFields()
     {
 
+        $uniq_fields  = [];
         $table_schema = $this->getTableSchema();
         if (count($table_schema) <= 0) {
             $this->setTableSchema();
