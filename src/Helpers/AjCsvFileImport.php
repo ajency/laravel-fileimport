@@ -482,7 +482,7 @@ class AjCsvFileImport
 
 
                 $temptablefield_for_child_insertid = $this->getFormatedFieldName($temp_child_insert_id);
-                if(isset($this->temptable_fields[$temptablefield_for_child_insertid])){
+                if(!isset($this->temptable_fields[$temptablefield_for_child_insertid])){
                     $qry_childtable_insert_ids .= " ," . $temptablefield_for_child_insertid . " INT ";
                     $qry_indexes .= ", INDEX USING BTREE(" . $temptablefield_for_child_insertid . ")";
                 }
@@ -846,6 +846,9 @@ class AjCsvFileImport
         $childtables_conf_ar = $this->getChildTableConf(); //config('ajimportdata.childtables');
 
         $total_loops = round($temp_records_count / $batchsize);
+        if($total_loops<=0){
+            $total_loops =1 ;
+        }
 
         // echo $temp_records_count . "TOTAL LOOPS" . $total_loops;
 
