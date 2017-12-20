@@ -151,7 +151,7 @@ class FileHandler
                         $header_mismatch_count++;
                         $headers_mismatch_fields[] = $header_mismatch_count.") ".$config_fileheaders[$i]. "     :    " .$file_headers[$i];
                         $this->header_matched = false;
-                        break;
+                        //break;
                     }
 
                 }
