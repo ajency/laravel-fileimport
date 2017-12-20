@@ -143,14 +143,25 @@ class FileHandler
                 }
 
                 $header_count = count($config_fileheaders);
+                $header_mismatch_count = 0;
+
+                $headers_mismatch_fields = [];
                 for ($i = 0; $i < $header_count; $i++) {
                     if ($config_fileheaders[$i] != $file_headers[$i]) {
-                        $this->errors[]       = "Error: File Headers mismatched with the configuration!!";
+                        $header_mismatch_count++;
+                        $headers_mismatch_fields[] = $header_mismatch_count.") ".$config_fileheaders[$i]. "     :    " .$file_headers[$i];
                         $this->header_matched = false;
                         break;
                     }
 
                 }
+
+                if(count($headers_mismatch_fields)>0){
+                    $this->errors[] = "<br/> <b>Error: File Headers mismatched with the configuration for the following <br/> Config Headers     :    File Headers <br/></b>". implode("<br/> ",$headers_mismatch_fields);
+                }
+
+
+
                 $this->headers = $config_fileheaders;
 
                 break;
