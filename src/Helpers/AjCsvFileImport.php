@@ -1044,12 +1044,12 @@ class AjCsvFileImport
 
         }
  
-        $tables_to_update_temp = config(['ajimportdata.tables_to_update_temp']); 
+        $tables_to_update_temp = config('ajimportdata.tables_to_update_temp'); 
         if(is_null($tables_to_update_temp)){
             $this->exportValidTemptableDataToFile($params);
         }
         else{
-            if (count(config(['ajimportdata.tables_to_update_temp']) > 0)) {
+            if (count(config('ajimportdata.tables_to_update_temp') > 0)) {
                 $this->update_field_temp_tbl_with_existing_child_records_by_conf($params);
             }
         }
