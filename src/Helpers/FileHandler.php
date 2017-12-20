@@ -182,7 +182,7 @@ class FileHandler
 
         $row = 1;
         if (($file_handle = fopen($file_path, "r")) !== false) {
-            while (($data = fgetcsv($file_handle, 1000, ",")) !== false) {
+            while (($data = fgetcsv($file_handle, 20000, ",")) !== false) {
                 if ($row == 1) {
                     $headers = $data;
                 }
@@ -193,7 +193,7 @@ class FileHandler
                 }
             }
         }
-        fclose($file_handle);
+        fclose($file_handle);       
 
         return $headers;
 
