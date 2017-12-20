@@ -1240,8 +1240,9 @@ class AjCsvFileImport
                     }
 
                     $field_to_multi_alias_tbl_name = "a" . $cnt_field_to_multirecords;
+                    $field_to_multi_records_where = " WHERE ".$field_to_multi_alias_tbl_name . ".`".$fields_to_multirecord."`!='' AND ".$field_to_multi_alias_tbl_name . ".`".$fields_to_multirecord."` IS NOT NULL ";
 
-                    $fields_to_multirecords_from .= ' SELECT ' . $field_to_multi_alias_tbl_name . '.`id` as `id`, ' . $field_to_multi_alias_tbl_name . '.`' . $fields_to_multirecord . '` as val  FROM `' . $temp_tablename . '` ' . $field_to_multi_alias_tbl_name . ' ';
+                    $fields_to_multirecords_from .= ' SELECT ' . $field_to_multi_alias_tbl_name . '.`id` as `id`, ' . $field_to_multi_alias_tbl_name . '.`' . $fields_to_multirecord . '` as val  FROM `' . $temp_tablename . '` ' . $field_to_multi_alias_tbl_name . ' '.$field_to_multi_records_where;
 
                     $cnt_field_to_multirecords++;
                 }
