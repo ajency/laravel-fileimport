@@ -483,6 +483,13 @@ class AjCsvFileImport
 
                 $temptablefield_for_child_insertid = $this->getFormatedFieldName($temp_child_insert_id);
                 if(!isset($this->temptable_fields[$temptablefield_for_child_insertid])){
+
+                    $this->temptable_fields[$temptablefield_for_child_insertid] = array(
+                        'Field' => $temptablefield_for_child_insertid,
+                        'Type'  => 'INT'
+                    );
+
+
                     $qry_childtable_insert_ids .= " ," . $temptablefield_for_child_insertid . " INT ";
                     $qry_indexes .= ", INDEX USING BTREE(" . $temptablefield_for_child_insertid . ")";
                 }
