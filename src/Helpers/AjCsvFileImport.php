@@ -134,17 +134,16 @@ class AjCsvFileImport
 
     public function set_ajx_return_logs($params)
     {
-        
-        if(isset($params['logs'])){
 
-            $this->logs   = array_merge($this->logs, $params['logs']);    
+        if (isset($params['logs'])) {
+
+            $this->logs = array_merge($this->logs, $params['logs']);
         }
-        
-        if(isset($params['errors'])){
-             $this->errors = array_merge($this->errors, $params['errors']);
+
+        if (isset($params['errors'])) {
+            $this->errors = array_merge($this->errors, $params['errors']);
         }
-        
-       
+
         if (isset($params['msg'])) {
             $this->msg = $this->msg . $params['msg'];
         }
@@ -411,7 +410,10 @@ class AjCsvFileImport
                 }
 
                 //if child table create index on the field
-                if ($is_child == true) {
+                //Do not create index for data types LONGTEXT,BLOB
+
+                if (strpos($cur_mtable_field->tmp_field_type, 'TEXT') == false && strpos($cur_mtable_field->tmp_field_type, 'BLOB')
+                    && $is_child == true) {
                     $qry__create_table .= ", INDEX `" . $tfield_name . "` (`" . $tfield_name . "` )";
                 }
 
@@ -475,26 +477,23 @@ class AjCsvFileImport
             $qry__create_table .= $this->tempTableQueryByTable($child_data, $childtable[$child_count], $is_child_table);
 
             if (isset($child_data['insertid_temptable'])) {
-            //if (isset($child_data['insertid_mtable'])) {
+                //if (isset($child_data['insertid_mtable'])) {
 
-                $temp_child_insert_id_arr  = array_keys($child_data['insertid_temptable']);
-                $temp_child_insert_id  = $temp_child_insert_id_arr[0];
-
+                $temp_child_insert_id_arr = array_keys($child_data['insertid_temptable']);
+                $temp_child_insert_id     = $temp_child_insert_id_arr[0];
 
                 $temptablefield_for_child_insertid = $this->getFormatedFieldName($temp_child_insert_id);
-                if(!isset($this->temptable_fields[$temptablefield_for_child_insertid])){
+                if (!isset($this->temptable_fields[$temptablefield_for_child_insertid])) {
 
                     $this->temptable_fields[$temptablefield_for_child_insertid] = array(
                         'Field' => $temptablefield_for_child_insertid,
-                        'Type'  => 'INT'
+                        'Type'  => 'INT',
                     );
-
 
                     $qry_childtable_insert_ids .= " ," . $temptablefield_for_child_insertid . " INT ";
                     $qry_indexes .= ", INDEX USING BTREE(" . $temptablefield_for_child_insertid . ")";
                 }
 
-                
             }
 
             if (isset($child_data['field_slug'])) {
@@ -670,8 +669,7 @@ class AjCsvFileImport
         $tables_to_update_temp                      = config('ajimportdata.tables_to_update_temp');
         $temp_field_ids_to_update_by_existing_child = [];
 
-        if(!is_null($tables_to_update_temp)){
-            
+        if (!is_null($tables_to_update_temp)) {
 
             $temp_table_ids_by_batch = $this->getTempTableIdsByBatch($limit, $batchsize);
 
@@ -685,9 +683,8 @@ class AjCsvFileImport
 
                 $fields_map_to_update_temptable_child_id = $tables_to_update_temp['fields_map_to_update_temptable_child_id'];
 
-                $cnt_where = 0;
+                $cnt_where       = 0;
                 $where_condition = '';
-
 
                 foreach ($fields_map_to_update_temptable_child_id as $tempfield => $childfield) {
 
@@ -707,10 +704,10 @@ class AjCsvFileImport
 
                     /*$where_condition .= " tmpdata." . $tempfield . " COLLATE utf8_general_ci = " . "childtable." . $childfield . " COLLATE
                     utf8_general_ci ";*/
-                    $where_condition .= " childtable." . $tempfield . "  = " . " '" .str_replace('\\', '\\\\',  $childfield_defaultvalue) . "' ";
+                    $where_condition .= " childtable." . $tempfield . "  = " . " '" . str_replace('\\', '\\\\', $childfield_defaultvalue) . "' ";
                     $cnt_where++;
                 }
-     
+
                 $qry_update_child_ids = "UPDATE " . $temp_tablename . " tmpdata, " . $tables_to_update_temp['name'] . " childtable
                     SET
                         tmpdata." . $child_insert_id_on_temp_table . " =  CAST(childtable." . $child_update_id . " as CHAR(50))
@@ -853,8 +850,8 @@ class AjCsvFileImport
         $childtables_conf_ar = $this->getChildTableConf(); //config('ajimportdata.childtables');
 
         $total_loops = round($temp_records_count / $batchsize);
-        if($total_loops<=0){
-            $total_loops =1 ;
+        if ($total_loops <= 0) {
+            $total_loops = 1;
         }
 
         // echo $temp_records_count . "TOTAL LOOPS" . $total_loops;
@@ -1043,18 +1040,15 @@ class AjCsvFileImport
             $temp_table_validator->validateField($temp_field_name, $child_table_schema[$child_field_name], $loop_count);
 
         }
- 
-        $tables_to_update_temp = config('ajimportdata.tables_to_update_temp'); 
-        if(is_null($tables_to_update_temp)){
+
+        $tables_to_update_temp = config('ajimportdata.tables_to_update_temp');
+        if (is_null($tables_to_update_temp)) {
             $this->exportValidTemptableDataToFile($params);
-        }
-        else{
+        } else {
             if (count(config('ajimportdata.tables_to_update_temp') > 0)) {
                 $this->update_field_temp_tbl_with_existing_child_records_by_conf($params);
             }
         }
-
-         
 
         /* $job_params = array('childtable' => $child_table_conf, 'loop_count' => $loop_count, 'type' => 'insertvalidchilddata');
         AjImportDataJob::dispatch($job_params)->onQueue('insertvalidchilddata');*/
@@ -1240,9 +1234,9 @@ class AjCsvFileImport
                     }
 
                     $field_to_multi_alias_tbl_name = "a" . $cnt_field_to_multirecords;
-                    $field_to_multi_records_where = " WHERE ".$field_to_multi_alias_tbl_name . ".`".$fields_to_multirecord."`!='' AND ".$field_to_multi_alias_tbl_name . ".`".$fields_to_multirecord."` IS NOT NULL ";
+                    $field_to_multi_records_where  = " WHERE " . $field_to_multi_alias_tbl_name . ".`" . $fields_to_multirecord . "`!='' AND " . $field_to_multi_alias_tbl_name . ".`" . $fields_to_multirecord . "` IS NOT NULL ";
 
-                    $fields_to_multirecords_from .= ' SELECT ' . $field_to_multi_alias_tbl_name . '.`id` as `id`, ' . $field_to_multi_alias_tbl_name . '.`' . $fields_to_multirecord . '` as val  FROM `' . $temp_tablename . '` ' . $field_to_multi_alias_tbl_name . ' '.$field_to_multi_records_where;
+                    $fields_to_multirecords_from .= ' SELECT ' . $field_to_multi_alias_tbl_name . '.`id` as `id`, ' . $field_to_multi_alias_tbl_name . '.`' . $fields_to_multirecord . '` as val  FROM `' . $temp_tablename . '` ' . $field_to_multi_alias_tbl_name . ' ' . $field_to_multi_records_where;
 
                     $cnt_field_to_multirecords++;
                 }
@@ -1274,10 +1268,10 @@ class AjCsvFileImport
 
         //$file_path = str_replace("\\", "\\\\", $child_outfile_name);
 
-        $file_path = $import_libs->formatImportExportFilePath($child_outfile_name);
-        $additional_where_condn ="";
+        $file_path              = $import_libs->formatImportExportFilePath($child_outfile_name);
+        $additional_where_condn = "";
 
-        if(isset($child_table_conf['insertid_temptable'])) {
+        if (isset($child_table_conf['insertid_temptable'])) {
 
             $tmp_tbl_child_insert_id_arr = array_keys($child_table_conf['insertid_temptable']);
 
@@ -1328,7 +1322,7 @@ class AjCsvFileImport
                                     OPTIONALLY ENCLOSED BY '\"'
                                     ESCAPED BY ''
                                     LINES TERMINATED BY '\n'
-                                    FROM " . $from_field_str . " (SELECT id FROM (SELECT id FROM " . $temp_tablename . " tt   ORDER BY tt.id ASC LIMIT " . $limit . "," . $batchsize . ") tt2 )  AND  aj_isvalid!='N' ".$additional_where_condn." order by outtable.id ASC";
+                                    FROM " . $from_field_str . " (SELECT id FROM (SELECT id FROM " . $temp_tablename . " tt   ORDER BY tt.id ASC LIMIT " . $limit . "," . $batchsize . ") tt2 )  AND  aj_isvalid!='N' " . $additional_where_condn . " order by outtable.id ASC";
 
             Log::info('<br/> \n  validchilddata OUTFILE query  :----------------------------------');
             Log::info("filepath" . $file_path);
