@@ -36,7 +36,7 @@ document.getElementById('btn_ajupload').addEventListener('click', function(e) {
             }
         }
     };
-    request.open('post', 'startajimport');
+    request.open('post', 'aj/startajimport');
     request.send(formdata);
 })
 form.addEventListener('submit', function(e) {});
