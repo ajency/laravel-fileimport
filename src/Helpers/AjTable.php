@@ -227,13 +227,16 @@ class AjTable
 
         $file_prefix = "aj_" . $this->table_name;
 
-        $folder = storage_path('app/Ajency/Ajfileimport/mtable');
+        //$folder = storage_path('app/Ajency/Ajfileimport/mtable');
+
+        $folder = $import_libs->getTempImportExportDirectory() . "/Ajency/";
 
         $import_libs->createDirectoryIfDontExists($folder);
 
         $child_outfile_name = $import_libs->generateUniqueOutfileName($file_prefix, $folder);
 
-        $file_path = str_replace("\\", "\\\\", $child_outfile_name);
+        //$file_path = str_replace("\\", "\\\\", $child_outfile_name);
+        $file_path              = $import_libs->formatImportExportFilePath($child_outfile_name);
 
         $this->setTableSchema();
         $table_schema = $this->getTableSchema();
