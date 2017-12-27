@@ -1515,9 +1515,35 @@ class AjCsvFileImport
 
         if ($current_child_count == ($total_childs - 1) && $loop_count == ($total_batches - 1)) {
 
+            $this->sendControltoCallback();
             Log::info('Import done. mailing error log file');
             $this->sendErrorLogFile();
 
+        }
+
+    }
+
+    public function sendControltoCallback()
+    {
+
+        Log::info('Import done. sendControltoCallback');
+
+        $aj_callbacks = config('ajimportdata.aj_callbacks');
+
+        if (!is_null($aj_callbacks) && is_array($aj_callbacks)) {
+            foreach ($aj_callbacks as $aj_callback) {
+
+                $class_path    = isset($aj_callback['class_path']) ? $aj_callback['class_path'] : '';
+                $function_name = isset($aj_callback['function_name']) ? $aj_callback['function_name'] : '';
+
+                if ($class_path != '' && $function_name != '') {
+                    $callback_obj = new $class_path;
+
+                    $result = call_user_func(array($callback_obj, $function_name));
+
+                }
+
+            }
         }
 
     }

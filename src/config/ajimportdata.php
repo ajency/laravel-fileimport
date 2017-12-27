@@ -14,7 +14,16 @@ $ajimport_config['temptable_default_fields'] = array("tmp_source" => 'y');
 
 $ajimport_config['fileheader'] = array('Id', 'Company Name', 'Add', 'City', 'Pin Code', 'Reference', 'State', 'Phone1', 'Phone2', 'Mobile1', 'Mobile2', 'Email1', 'Email2', 'Year', 'Web', 'Business Type', 'Business Details');
 
- 
+
+/* Define Call back after import is done */
+/*$ajimport_config['aj_callbacks'] = array(
+                                   array('function_name'=>'create',
+                                         'class_path'   =>'\App\Http\Controllers\Test2controller',
+                                        ),
+                                    array('function_name'=>'edit',
+                                         'class_path'   =>'\App\Http\Controllers\TestController',
+                                        )         
+                                );*/
 
 /**
  * config to update any id column(for ex user_id) based on set of fields from child table(for ex user_communication table)
