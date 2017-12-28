@@ -45,7 +45,6 @@ class AjCsvFileImport
     public function fileuploadform()
     {
 
-        
         $loader_gif = realpath(__DIR__ . '..\..\assets\images\loader.gif');
         $data       = array('loader_gif' => $loader_gif);
         return view('ajfileimport::index')->with($data);
@@ -453,6 +452,8 @@ class AjCsvFileImport
         $this->setChildTableConf();
         $this->setFileHeaderConf();
 
+        $temp_table_indexes = array();
+
         $fileheaders_conf = $this->getFileHeaderConf(); //config('ajimportdata.fileheader'); //Get file headers
         //
         $mastertable_conf = config('ajimportdata.mastertable'); //Get file headers
@@ -494,6 +495,8 @@ class AjCsvFileImport
 
                     $qry_childtable_insert_ids .= " ," . $temptablefield_for_child_insertid . " INT ";
                     $qry_indexes .= ", INDEX USING BTREE(" . $temptablefield_for_child_insertid . ")";
+
+                    $temp_table_indexes[] = $temptablefield_for_child_insertid;
                 }
 
             }
@@ -506,6 +509,15 @@ class AjCsvFileImport
             }
 
         }
+
+        $config_indexes_result = $this->addConfigFieldIndexesOnTempTable($temp_table_indexes);
+        $temp_table_indexes    = array_merge($temp_table_indexes, $config_indexes_result['index_fields']);
+        $qry_indexes .= $config_indexes_result['index_query'];
+
+        $qry_unique_fields           = "";
+        $config_unique_fields_result = $this->addConfigUniqueFieldOnTempTable();
+
+        $qry_unique_fields .= $config_unique_fields_result['unique_query'];
 
         /*echo "*************************";
         var_dump($this->temptable_fields);
@@ -541,6 +553,7 @@ class AjCsvFileImport
         $qry__create_table .= ", `aj_processed`  CHAR(1) NOT NULL DEFAULT 'n' ";
         $qry__create_table .= ", `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ";
         $qry__create_table .= $qry_indexes;
+        $qry__create_table .= $qry_unique_fields;
         $qry__create_table .= " )  ENGINE=InnoDB;";
         //dd($qry__create_table);
 
@@ -644,6 +657,70 @@ class AjCsvFileImport
     }
 
     }*/
+
+    /**
+     * Create unique fields on temp table for the configured fields
+     *
+     * @param      <type>  $temp_table_indexes  The temporary table indexes
+     *
+     * @return     string  ( description_of_the_return_value )
+     */
+    public function addConfigUniqueFieldOnTempTable($temp_table_unique = array())
+    {
+        $temp_tablename_unique_fields = config('ajimportdata.uniquefields');
+
+        $qry_temptable_config_unique = "";
+        $new_temp_table_unique       = [];
+
+        $additional_indexes = array_diff($temp_tablename_unique_fields, $temp_table_unique);
+        if (!is_null($temp_tablename_unique_fields)) {
+
+            if (is_array($temp_tablename_unique_fields) && count($temp_tablename_unique_fields) > 0) {
+                foreach ($additional_indexes as $value) {
+
+                    $uniq_field_name = $this->getFormatedFieldName($value);
+                    $qry_temptable_config_unique .= ", UNIQUE (" . $uniq_field_name . ")";
+                    $new_temp_table_unique[] = $uniq_field_name;
+                }
+            }
+
+        }
+
+        return array('unique_query' => $qry_temptable_config_unique, 'unique_fields' => $new_temp_table_unique);
+
+    }
+
+    /**
+     * Create indexes on temp table for the configured fields
+     *
+     * @param      <type>  $temp_table_indexes  The temporary table indexes
+     *
+     * @return     string  ( description_of_the_return_value )
+     */
+    public function addConfigFieldIndexesOnTempTable($temp_table_indexes)
+    {
+        $qry_temptable_config_indexes = "";
+        $new_temp_table_indexes       = [];
+        $temp_tablename_index_fields  = config('ajimportdata.indexfields');
+        if (!is_null($temp_tablename_index_fields)) {
+
+            if (is_array($temp_tablename_index_fields)) {
+                $additional_indexes = array_diff($temp_tablename_index_fields, $temp_table_indexes);
+                if (count($additional_indexes) > 0) {
+                    foreach ($additional_indexes as $value) {
+
+                        $index_field_name = $this->getFormatedFieldName($value);
+                        $qry_temptable_config_indexes .= ", INDEX USING BTREE(" . $index_field_name . ")";
+                        $new_temp_table_indexes[] = $index_field_name;
+                    }
+                }
+            }
+
+        }
+
+        return array('index_query' => $qry_temptable_config_indexes, 'index_fields' => $new_temp_table_indexes);
+
+    }
 
     //Read the config and build array by key(field insert id to update) and child tables conf
     public function update_field_temp_tbl_with_existing_child_records_by_conf($params)
@@ -1663,8 +1740,8 @@ class AjCsvFileImport
                                         LINES TERMINATED BY '\n'
                                         FROM " . $temp_tablename . " outtable WHERE aj_isvalid!='N' ";
 
-                                        Log::info($qry_select_valid_data);
-                                         DB::select($qry_select_valid_data);
+                Log::info($qry_select_valid_data);
+                DB::select($qry_select_valid_data);
 
             } catch (\Illuminate\Database\QueryException $ex) {
 
@@ -1681,11 +1758,9 @@ class AjCsvFileImport
 
         if (is_array($import_log_mail)) {
 
-            $attachment_files = array($errorlog_outfile_path,$successlog_file_path);
-            $mail_params = array_merge($import_log_mail, array('attachment' =>$attachment_files  ) );
+            $attachment_files = array($errorlog_outfile_path, $successlog_file_path);
+            $mail_params      = array_merge($import_log_mail, array('attachment' => $attachment_files));
         }
-
-
 
         //$mail_params = array('recipient' => $recipient, 'attachment' => $errorlog_outfile_path);
         if (is_array($mail_params) && isset($mail_params['to'])) {

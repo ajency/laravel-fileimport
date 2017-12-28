@@ -26,7 +26,16 @@ $ajimport_config['temptable_default_fields'] = array("tmp_source" => 'y');
 $ajimport_config['fileheader'] = array('Id', 'Company Name', 'Add', 'City', 'Pin Code', 'Reference', 'State', 'Phone1', 'Phone2', 'Mobile1', 'Mobile2', 'Email1', 'Email2', 'Year', 'Web', 'Business Type', 'Business Details');
 
 
-/* Define Call back after import is done */
+/** Allows to add indexes on temp table */
+//$ajimport_config['indexfields'] = array('Email1','Phone2');
+
+
+/** Allows to add unique contraint on temp table field */
+//$ajimport_config['uniquefields'] = array('Email1','Phone2');
+
+
+
+/** Define Call back after import is done */
 /*$ajimport_config['aj_callbacks'] = array(
                                    array('function_name'=>'create',
                                          'class_path'   =>'\App\Http\Controllers\Test1controller',
@@ -37,15 +46,15 @@ $ajimport_config['fileheader'] = array('Id', 'Company Name', 'Add', 'City', 'Pin
                                 );*/
 
 
-/*Callbacks after completion of each batch*/
-$ajimport_config['aj_batchcallbacks'] = array(
+/** Callbacks after completion of each batch*/
+/*$ajimport_config['aj_batchcallbacks'] = array(
                                    array('function_name'=>'create',
                                          'class_path'   =>'\App\Http\Controllers\Test3controller',
                                         ),
                                     array('function_name'=>'edit',
                                          'class_path'   =>'\App\Http\Controllers\Test4controller',
                                         )         
-                                );                               
+                                ); */                              
 
 /**
  * config to update any id column(for ex user_id) based on set of fields from child table(for ex user_communication table)
