@@ -8,6 +8,7 @@
 namespace Ajency\Ajfileimport\Helpers;
 
 use Illuminate\Support\Facades\File;
+use Log;
 
 class FileHandler
 {
@@ -17,6 +18,7 @@ class FileHandler
     private $file_type;
     private $header_count_match = true;
     private $header_matched     = true;
+    private $file_data_exists   = false;
     private $errors             = [];
     private $logs               = [];
     private $msg                = '';
@@ -130,6 +132,7 @@ class FileHandler
                 $file_headers             = $this->read_csv_file_headers();
                 $config_fileheaders_count = count($config_fileheaders);
                 $file_headers_count       = count($file_headers);
+                $is_data_exists           = $this->checkIfRecordsExists();
 
                 /*print_r($config_fileheaders);
                 echo " config header count :". $config_fileheaders_count . "-- File Header count:" . $file_headers_count;*/
@@ -142,25 +145,29 @@ class FileHandler
                     $this->logs[] = "Header count matched ";
                 }
 
-                $header_count = count($config_fileheaders);
+                if ($is_data_exists == false) {
+                    $this->errors[]         = "<br/>Error:  File contains no records to insert";
+                    $this->file_data_exists = false;
+                    break;
+                }
+
+                $header_count          = count($config_fileheaders);
                 $header_mismatch_count = 0;
 
                 $headers_mismatch_fields = [];
                 for ($i = 0; $i < $header_count; $i++) {
                     if ($config_fileheaders[$i] != $file_headers[$i]) {
                         $header_mismatch_count++;
-                        $headers_mismatch_fields[] = $header_mismatch_count.") ".$config_fileheaders[$i]. "     :    " .$file_headers[$i];
-                        $this->header_matched = false;
+                        $headers_mismatch_fields[] = $header_mismatch_count . ") " . $config_fileheaders[$i] . "     :    " . $file_headers[$i];
+                        $this->header_matched      = false;
                         //break;
                     }
 
                 }
 
-                if(count($headers_mismatch_fields)>0){
-                    $this->errors[] = "<br/> <b>Error: File Headers mismatched with the configuration for the following <br/> Config Headers     :    File Headers <br/></b>". implode("<br/> ",$headers_mismatch_fields);
+                if (count($headers_mismatch_fields) > 0) {
+                    $this->errors[] = "<br/> <b>Error: File Headers mismatched with the configuration for the following <br/> Config Headers     :    File Headers <br/></b>" . implode("<br/> ", $headers_mismatch_fields);
                 }
-
-
 
                 $this->headers = $config_fileheaders;
 
@@ -204,7 +211,7 @@ class FileHandler
                 }
             }
         }
-        fclose($file_handle);       
+        fclose($file_handle);
 
         return $headers;
 
@@ -230,6 +237,37 @@ class FileHandler
         file_put_contents($file_path, $file_content);
 
         return $file_path;
+    }
+
+    public function checkIfRecordsExists($args = array())
+    {
+
+        $file_path      = $this->file_path;
+        $data_row_found = false;
+
+        $row = 1;
+        if (($file_handle = fopen($file_path, "r")) !== false) {
+            while (($data = fgetcsv($file_handle, 20000, ",")) !== false) {
+                if ($row == 1) {
+                    $headers = $data;
+                }
+
+                if ($row > 1) {
+                    foreach ($data as $value) {
+                        Log::info('==================================' . $row . ' - check_if_records_exists=======================================');
+                        if (trim($value) != '') {
+                            $data_row_found = true;
+                            break;
+                        }
+                    }
+                }
+                $row++;
+            }
+        }
+        fclose($file_handle);
+
+        return $data_row_found;
+
     }
 
     /*public function is_directory_exists($filepath)
