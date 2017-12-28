@@ -33,11 +33,38 @@ class AjSendMail extends Mailable
         //return $this->view('view.name');
         Log:info("Ajfileimport\Mail :------------------------");
         Log::info($this->params);
-        if (isset($this->params['attachment'])) {
-            return $this->view('AjcsvimportView::importlogs')->attach($this->params['attachment'])->subject('Aj laravel import log')->from('parag@ajency.in');
-        } else {
-            return $this->view('AjcsvimportView::importlogs')->subject('Aj laravel import log')->from('parag@ajency.in');
-        }
+
+        $from = isset($this->params['from']) ? $this->params['from'] : 'Aj laravel import log';
+        $subject = isset($this->params['subject']) ? $this->params['subject'] : 'Aj laravel import log';
+
+
+        $to          = isset($this->params['to']) ? $this->params['to'] : array();
+        $cc          = isset($this->params['cc']) ? $this->params['cc'] : array();
+        $bcc         = isset($this->params['bcc']) ? $this->params['bcc'] : array();
+        $template    = /*isset($this->params['template']) ? $this->params['template'] : */'AjcsvimportView::importlogs';
+        $mail_params = isset($this->params['mail_params']) ? $this->params['mail_params'] : array();
+        $attachments = isset($this->params['attachment']) ? $this->params['attachment'] : array();
+
+        $this->from($from);
+        $this->to($to);
+        $this->cc($cc);
+        $this->bcc($bcc);
+        $this->view($template)->with($mail_params);
+        $this->subject($subject);
+
+        if (isset($attachments) ){
+
+            if(is_array($attachments)){
+                foreach ($attachments as $value) {
+                    $this->attach($value);
+                }
+            }
+
+            //return $this->view('AjcsvimportView::importlogs')->attach($this->params['attachment'])->subject('Aj laravel import log')->from('parag@ajency.in');
+        } /*else {
+        return $this->view('AjcsvimportView::importlogs')->subject('Aj laravel import log')->from('parag@ajency.in');
+        }*/
+        return $this;
 
     }
 }

@@ -3,7 +3,18 @@
 $ajimport_config['filetype']      = "csv";
 $ajimport_config['delimiter']     = ",";
 $ajimport_config['batchsize']     = "100";
-$ajimport_config['recipient']     = "parag@ajency.in";
+//$ajimport_config['recipient']     = "parag@ajency.in";
+$ajimport_config['import_log_mail'] = array(
+    'from'        => 'parag+888@ajency.in',
+    'subject'     => 'Import log -ajency',
+    'to'          => array('parag@ajency.in'),
+    'cc'          => array('parag+444@ajency.in', 'parag+555@ajency.in'),
+    'bcc'         => array('parag+666@ajency.in'),
+    'template'    => '',
+    'mail_params' => array('name' => 'importabc', 'day' => date('d-m-Y H:i:s')),
+);
+
+
 $ajimport_config['import_folder'] = ""; //Folder with permission to write
 
 $ajimport_config['temptablename']            = 'aj_import_temp';

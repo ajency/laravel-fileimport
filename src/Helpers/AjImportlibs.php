@@ -142,7 +142,7 @@ class AjImportlibs
     public function sendMail($params)
     {
 
-        Mail::to($params['recipient'])->send(new AjSendMail($params));
+        Mail::send(new AjSendMail($params));
 
         //
         /*Mail::raw('sendDailyProjectMailsToProfile-'.env('APP_ENV'), function ($message) {

@@ -44,6 +44,8 @@ class AjCsvFileImport
 
     public function fileuploadform()
     {
+
+        
         $loader_gif = realpath(__DIR__ . '..\..\assets\images\loader.gif');
         $data       = array('loader_gif' => $loader_gif);
         return view('ajfileimport::index')->with($data);
@@ -1513,7 +1515,7 @@ class AjCsvFileImport
             $this->setProcessed($temp_tablename, $limit, $batchsize);
             $aj_batchcallbacks = config('ajimportdata.aj_batchcallbacks');
             $callback_args     = array('limit' => $limit, 'batchsize' => $batchsize);
-            $this->sendControltoCallback($aj_batchcallbacks,$callback_args);
+            $this->sendControltoCallback($aj_batchcallbacks, $callback_args);
 
         }
 
@@ -1543,15 +1545,11 @@ class AjCsvFileImport
                 if ($class_path != '' && $function_name != '') {
                     $callback_obj = new $class_path;
 
-                    if(count($args)>0){
-                        $result = call_user_func_array(array($callback_obj, $function_name),array($args));
+                    if (count($args) > 0) {
+                        $result = call_user_func_array(array($callback_obj, $function_name), array($args));
+                    } else {
+                        $result = call_user_func(array($callback_obj, $function_name));
                     }
-                    else{
-                        $result = call_user_func(array($callback_obj, $function_name));    
-                    }
-                    
-                    
-                    
 
                 }
 
@@ -1602,8 +1600,9 @@ class AjCsvFileImport
     public function sendErrorLogFile()
     {
 
-        $import_libs = new AjImportlibs();
-        $recipient   = config('ajimportdata.recipient');
+        $import_libs     = new AjImportlibs();
+        $recipient       = config('ajimportdata.recipient');
+        $import_log_mail = config('ajimportdata.import_log_mail');
 
         $temp_tablename = config('ajimportdata.temptablename');
         $file_prefix    = "aj_errorlog";
@@ -1633,18 +1632,46 @@ class AjCsvFileImport
 
         try {
 
-            $qry_select_valid_data = "SELECT '" . implode("', '", $fields_names_ar) . "'  ";
+            $qry_select_invalid_data = "SELECT '" . implode("', '", $fields_names_ar) . "'  ";
 
-            $qry_select_valid_data .= " UNION ALL ";
+            $qry_select_invalid_data .= " UNION ALL ";
 
-            $qry_select_valid_data .= "SELECT  * INTO OUTFILE '" . $file_path . "'
+            $qry_select_invalid_data .= "SELECT  * INTO OUTFILE '" . $file_path . "'
                                     FIELDS TERMINATED BY ','
                                     OPTIONALLY ENCLOSED BY '\"'
                                     LINES TERMINATED BY '\n'
                                     FROM " . $temp_tablename . " outtable WHERE aj_isvalid='N'";
 
-            Log:info($qry_select_valid_data);
-            DB::select($qry_select_valid_data);
+            Log:info($qry_select_invalid_data);
+            DB::select($qry_select_invalid_data);
+
+            /* Mail success log  file */
+
+            $success_log_file_prefix = "aj_successlog";
+            $successlog_outfile_path = $import_libs->generateUniqueOutfileName($success_log_file_prefix, $folder);
+            $successlog_file_path    = $import_libs->formatImportExportFilePath($successlog_outfile_path);
+
+            try {
+
+                $qry_select_valid_data = "SELECT '" . implode("', '", $fields_names_ar) . "'  ";
+
+                $qry_select_valid_data .= " UNION ALL ";
+
+                $qry_select_valid_data .= "SELECT  * INTO OUTFILE '" . $successlog_file_path . "'
+                                        FIELDS TERMINATED BY ','
+                                        OPTIONALLY ENCLOSED BY '\"'
+                                        LINES TERMINATED BY '\n'
+                                        FROM " . $temp_tablename . " outtable WHERE aj_isvalid!='N' ";
+
+                                        Log::info($qry_select_valid_data);
+                                         DB::select($qry_select_valid_data);
+
+            } catch (\Illuminate\Database\QueryException $ex) {
+
+                $this->errors[] = $ex->getMessage();
+
+            }
+            /* End Mail success log  file */
 
         } catch (\Illuminate\Database\QueryException $ex) {
 
@@ -1652,9 +1679,18 @@ class AjCsvFileImport
 
         }
 
-        $mail_params = array('recipient' => $recipient, 'attachment' => $errorlog_outfile_path);
+        if (is_array($import_log_mail)) {
 
-        $import_libs->sendMail($mail_params);
+            $attachment_files = array($errorlog_outfile_path,$successlog_file_path);
+            $mail_params = array_merge($import_log_mail, array('attachment' =>$attachment_files  ) );
+        }
+
+
+
+        //$mail_params = array('recipient' => $recipient, 'attachment' => $errorlog_outfile_path);
+        if (is_array($mail_params) && isset($mail_params['to'])) {
+            $import_libs->sendMail($mail_params);
+        }
 
     }
 
