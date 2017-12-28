@@ -34,6 +34,12 @@ $ajimport_config['fileheader'] = array('Id', 'Company Name', 'Add', 'City', 'Pin
 //$ajimport_config['uniquefields'] = array('Email1','Phone2');
 
 
+/** Mark records invalid on temp table if set of fields matches each other. For ex if Email1 & Email2 value matches each other in row it will be marked as invalid */
+/*$ajimport_config['invalid_matches'] = array(['Email1','Email2'],
+                                         ['Mobile1','Mobile2']
+                                        );*/
+
+
 
 /** Define Call back after import is done */
 /*$ajimport_config['aj_callbacks'] = array(

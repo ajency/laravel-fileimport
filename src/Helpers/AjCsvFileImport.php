@@ -722,6 +722,70 @@ class AjCsvFileImport
 
     }
 
+    /**
+     * Mark records invalid on temp table if set of fields matches each other.
+     * For ex if Email1 & Email2 value matches each other in row it will be marked as invalid
+     * COnf:  $ajimport_config['invalid_matches'] = array(['Email1','Email2'])
+     */
+    public function markRcordInvalidIfConfigFieldsMatches($params)
+    {
+
+        try {
+
+
+            $log_msg_fields  = "";
+            $qry_field_match = "";
+            $loop_count      = $params['current_loop_count'];
+
+            $temp_tablename = config('ajimportdata.temptablename');
+            $batchsize      = config('ajimportdata.batchsize');
+
+            $limit = $loop_count * $batchsize;
+
+            $conf_invalid_matches = config('ajimportdata.invalid_matches');
+
+            $temp_table_ids_by_batch = $this->getTempTableIdsByBatch($limit, $batchsize);
+
+            if (!is_null($conf_invalid_matches)) {
+
+                if (is_array($conf_invalid_matches)) {
+                    if (count($conf_invalid_matches) > 0) {
+
+                        $cnt_fieldmatch = 0;
+                        foreach ($conf_invalid_matches as $value) {
+
+                            if ($cnt_fieldmatch > 0) {
+                                $qry_field_match .= " OR ";
+                            }
+                            $qry_field_match .= "(" . $value[0] . " like " . $value[1] . ")  ";
+                            $log_msg_fields .= " (" . $value[0] . " , " . $value[1] . ") , ";
+                            $cnt_fieldmatch++;
+                        }
+                        $qry_field_match .= " AND tmptble.id in (" . $temp_table_ids_by_batch . ")";
+                        Log::info('markRcordInvalidIfConfigFieldsMatches:--- QUERY------------------------- ');
+                        Log::info($qry_field_match);
+
+                        $log_msg_fields = "Duplicate field matches " . $log_msg_fields;
+
+                        $qry_field_match_main = " UPDATE " . $temp_tablename . " tmptble  SET aj_isvalid ='N', aj_error_log='" . $log_msg_fields . "', aj_processed='y'  WHERE " . $qry_field_match;
+
+                        DB::update($qry_field_match_main);
+                    }
+                }
+
+            }
+
+        } catch (\Illuminate\Database\QueryException $ex) {
+
+            // Note any method of class PDOException can be called on $ex.
+            $this->errors[] = $ex->getMessage();
+
+            $msg_log = json_encode(array('limit' => $limit, 'batchsize' => $batchsize, 'errormsg' => $ex->getMessage()));
+
+        }
+
+    }
+
     //Read the config and build array by key(field insert id to update) and child tables conf
     public function update_field_temp_tbl_with_existing_child_records_by_conf($params)
     {
@@ -1024,6 +1088,7 @@ class AjCsvFileImport
         $batchsize = config('ajimportdata.batchsize'); //Get temp table name from config
         // $loops     = round($temp_records_count / $batchsize);
 
+        $this->markRcordInvalidIfConfigFieldsMatches($params);
         for ($child_count = 0; $child_count < $total_no_child_tables; $child_count++) {
 
             $child_table = new AjTable($child_table_conf_list[$child_count]['name']);
@@ -1121,6 +1186,7 @@ class AjCsvFileImport
         }
 
         $tables_to_update_temp = config('ajimportdata.tables_to_update_temp');
+
         if (is_null($tables_to_update_temp)) {
             $this->exportValidTemptableDataToFile($params);
         } else {
