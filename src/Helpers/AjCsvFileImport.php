@@ -1316,6 +1316,48 @@ class AjCsvFileImport
 
         }
 
+
+
+        /** If Json values has to be added on table build the serialized array value for the fields */
+        $json_string = "";
+        if (isset($child_table_conf['jsonvalues']) && !is_null($child_table_conf['jsonvalues']) ) {
+
+            $json_fields_conf = $child_table_conf['jsonvalues'];
+
+            foreach ($json_fields_conf as $target_json_field => $json_tmpfield) {
+
+                $current_json_field_cnt = count($json_tmpfield);
+
+                $json_string = 'CONCAT("{"';
+                $json_field_cnt = 0;
+
+                foreach ($json_tmpfield as $json_key => $json_value) {
+
+                   /* $json_string .= ',"\"' . $json_key . '\":"';
+                    $json_string .= ',"",",' . $json_value . ',"';*/
+                   /* $json_string .= ',"\"' . $json_key . '\":"';
+                    $json_string .= '"",' . $json_value . '';*/
+                    if($json_field_cnt>0){
+                        $json_string .= ',","'; 
+                    }
+
+                    $json_string .= ',"\"' . $json_key . '\":"';                    
+                    $json_string .= '"",' . $json_value . '';
+
+                    $json_field_cnt++;
+
+                }
+                //$json_string .= ',"}")';
+                 $json_string .= ',"'. '\"}")';
+
+                $child_fields_ar[] = $target_json_field;
+
+            }
+
+        }
+
+
+
         /** If colstoarrayfield  has been defined (Multiple column values goes as the array to single field on child table) */
         $colstoarrayfield_string = "";
         if (isset($child_table_conf['colstoarrayfield'])) {
@@ -1441,6 +1483,12 @@ class AjCsvFileImport
             if ($serialize_string != '') {
                 $qry_select_valid_data .= "," . $serialize_string;
             }
+
+            if ($json_string != '') {
+                $qry_select_valid_data .= "," . $json_string;
+            }
+
+
             if ($colstoarrayfield_string != '') {
                 $qry_select_valid_data .= "," . $colstoarrayfield_string;
             }
