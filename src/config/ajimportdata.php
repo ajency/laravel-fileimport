@@ -25,6 +25,10 @@ $ajimport_config['temptable_default_fields'] = array("tmp_source" => 'y');
 
 $ajimport_config['fileheader'] = array('Id', 'Company Name', 'Add', 'City', 'Pin Code', 'Reference', 'State', 'Phone1', 'Phone2', 'Mobile1', 'Mobile2', 'Email1', 'Email2', 'Year', 'Web', 'Business Type', 'Business Details');
 
+/** Fields that need to be mandatary on temp table */
+//$ajimport_config['mandatary_tmp_tblfields'] = array( 'Company_Name','Pin_Code');
+
+
 
 /** Allows to add indexes on temp table */
 //$ajimport_config['indexfields'] = array('Email1','Phone2');

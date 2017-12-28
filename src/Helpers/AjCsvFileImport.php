@@ -356,6 +356,13 @@ class AjCsvFileImport
     public function tempTableQueryByTable($mastertable_conf, $mastertable, $is_child)
     {
 
+        /* OVERRIDE NULLABLE SET ON CHILD TABLE FIELD RULE, WHILE CREATING TEMP TABLE FIELD FOR SAME FIELD*/
+        /*$mandatary_tmp_tblfields_ar = array();
+
+        if (!is_null(config('ajimportdata.mandatary_tmp_tblfields'))) {
+            $mandatary_tmp_tblfields_ar = config('ajimportdata.mandatary_tmp_tblfields'); //Get manadatary fields on temp table
+        }*/
+
         $mtable_fieldmaps = $mastertable_conf['fields_map'];
 
         $qry__create_table = "";
@@ -400,7 +407,15 @@ class AjCsvFileImport
 
                 if ($cur_mtable_field->Null == true) {
 
+                    /* OVERRIDE NULLABLE SET ON CHILD TABLE FIELD RULE, WHILE CREATING TEMP TABLE FIELD FOR SAME FIELD*/
+                    /*if (in_array($tfield_name, $mandatary_tmp_tblfields_ar)) {
+                        $qry__create_table .= " NOT NULL ";
+                    } else {
+                        $qry__create_table .= " DEFAULT NULL ";
+                    }*/
+
                     $qry__create_table .= " DEFAULT NULL ";
+
                     $temptable_fields['Null'] = 'YES';
                 }
 
@@ -732,7 +747,6 @@ class AjCsvFileImport
 
         try {
 
-
             $log_msg_fields  = "";
             $qry_field_match = "";
             $loop_count      = $params['current_loop_count'];
@@ -770,6 +784,74 @@ class AjCsvFileImport
                         $qry_field_match_main = " UPDATE " . $temp_tablename . " tmptble  SET aj_isvalid ='N', aj_error_log='" . $log_msg_fields . "', aj_processed='y'  WHERE " . $qry_field_match;
 
                         DB::update($qry_field_match_main);
+                    }
+                }
+
+            }
+
+        } catch (\Illuminate\Database\QueryException $ex) {
+
+            // Note any method of class PDOException can be called on $ex.
+            $this->errors[] = $ex->getMessage();
+
+            $msg_log = json_encode(array('limit' => $limit, 'batchsize' => $batchsize, 'errormsg' => $ex->getMessage()));
+
+        }
+
+    }
+
+
+
+
+
+    /**
+     * Mark records invalid If mandatary fields defined in configuration are null or empty in temp table .
+     * For ex if Company_Name or  Pin_Code are null or empty, then the corresponding records will be marked as invalid
+     * COnf:  $ajimport_config['mandatary_tmp_tblfields'] = array( 'Company_Name','Pin_Code');
+     */
+    public function markInvalidIfMandataryTmpTblFieldsAreEmpty($params)
+    {
+
+        try {
+
+            $log_mandatary_tmp_tglfields_msg  = "";
+            $qry_mandatary_tmp_tblfields = "";
+            $loop_count      = $params['current_loop_count'];
+
+            $temp_tablename = config('ajimportdata.temptablename');
+            $batchsize      = config('ajimportdata.batchsize');
+
+            $limit = $loop_count * $batchsize;
+
+            $conf_mandatary_tmp_tblfields = config('ajimportdata.mandatary_tmp_tblfields');
+
+            $temp_table_ids_by_batch = $this->getTempTableIdsByBatch($limit, $batchsize);
+
+            if (!is_null($conf_mandatary_tmp_tblfields)) {
+
+                if (is_array($conf_mandatary_tmp_tblfields)) {
+                    if (count($conf_mandatary_tmp_tblfields) > 0) {
+
+                        $cnt_fieldmatch = 0;
+                        foreach ($conf_mandatary_tmp_tblfields as $value) {
+
+                            if ($cnt_fieldmatch > 0) {
+                                $qry_mandatary_tmp_tblfields .= " OR ";
+                                $log_mandatary_tmp_tglfields_msg .= ", ";
+                            }
+                            $qry_mandatary_tmp_tblfields .= $value." IS NULL OR  ".$value." = '' ";
+                            $log_mandatary_tmp_tglfields_msg .= $value;
+                            $cnt_fieldmatch++;
+                        }
+                        $qry_mandatary_tmp_tblfields .= " AND tmptble.id in (" . $temp_table_ids_by_batch . ")";
+                        Log::info('markRcordInvalidIfConfigFieldsMatches:--- QUERY------------------------- ');
+                        Log::info($qry_mandatary_tmp_tblfields);
+
+                        $log_mandatary_tmp_tglfields_msg = "Mandatary fields configured are empty or null " . $log_mandatary_tmp_tglfields_msg;
+
+                        $qry_mandatary_tmp_tblfields_main = " UPDATE " . $temp_tablename . " tmptble  SET aj_isvalid ='N', aj_error_log='" . $log_mandatary_tmp_tglfields_msg . "', aj_processed='y'  WHERE " . $qry_mandatary_tmp_tblfields;
+
+                        DB::update($qry_mandatary_tmp_tblfields_main);
                     }
                 }
 
@@ -1089,6 +1171,8 @@ class AjCsvFileImport
         // $loops     = round($temp_records_count / $batchsize);
 
         $this->markRcordInvalidIfConfigFieldsMatches($params);
+        $this->markInvalidIfMandataryTmpTblFieldsAreEmpty($params);
+
         for ($child_count = 0; $child_count < $total_no_child_tables; $child_count++) {
 
             $child_table = new AjTable($child_table_conf_list[$child_count]['name']);
@@ -1316,11 +1400,9 @@ class AjCsvFileImport
 
         }
 
-
-
         /** If Json values has to be added on table build the serialized array value for the fields */
         $json_string = "";
-        if (isset($child_table_conf['jsonvalues']) && !is_null($child_table_conf['jsonvalues']) ) {
+        if (isset($child_table_conf['jsonvalues']) && !is_null($child_table_conf['jsonvalues'])) {
 
             $json_fields_conf = $child_table_conf['jsonvalues'];
 
@@ -1328,35 +1410,33 @@ class AjCsvFileImport
 
                 $current_json_field_cnt = count($json_tmpfield);
 
-                $json_string = 'CONCAT("{"';
+                $json_string    = 'CONCAT("{"';
                 $json_field_cnt = 0;
 
                 foreach ($json_tmpfield as $json_key => $json_value) {
 
-                   /* $json_string .= ',"\"' . $json_key . '\":"';
+                    /* $json_string .= ',"\"' . $json_key . '\":"';
                     $json_string .= ',"",",' . $json_value . ',"';*/
-                   /* $json_string .= ',"\"' . $json_key . '\":"';
+                    /* $json_string .= ',"\"' . $json_key . '\":"';
                     $json_string .= '"",' . $json_value . '';*/
-                    if($json_field_cnt>0){
-                        $json_string .= ',","'; 
+                    if ($json_field_cnt > 0) {
+                        $json_string .= ',","';
                     }
 
-                    $json_string .= ',"\"' . $json_key . '\":"';                    
+                    $json_string .= ',"\"' . $json_key . '\":"';
                     $json_string .= '"",' . $json_value . '';
 
                     $json_field_cnt++;
 
                 }
                 //$json_string .= ',"}")';
-                 $json_string .= ',"'. '\"}")';
+                $json_string .= ',"' . '\"}")';
 
                 $child_fields_ar[] = $target_json_field;
 
             }
 
         }
-
-
 
         /** If colstoarrayfield  has been defined (Multiple column values goes as the array to single field on child table) */
         $colstoarrayfield_string = "";
@@ -1487,7 +1567,6 @@ class AjCsvFileImport
             if ($json_string != '') {
                 $qry_select_valid_data .= "," . $json_string;
             }
-
 
             if ($colstoarrayfield_string != '') {
                 $qry_select_valid_data .= "," . $colstoarrayfield_string;
