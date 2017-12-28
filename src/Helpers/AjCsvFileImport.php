@@ -1511,11 +1511,16 @@ class AjCsvFileImport
         //If all the child table configurations are processed for the selected batch, update the temp table records as processed for the selected batch
         if ($current_child_count >= ($total_childs - 1)) {
             $this->setProcessed($temp_tablename, $limit, $batchsize);
+            $aj_batchcallbacks = config('ajimportdata.aj_batchcallbacks');
+            $callback_args     = array('limit' => $limit, 'batchsize' => $batchsize);
+            $this->sendControltoCallback($aj_batchcallbacks,$callback_args);
+
         }
 
         if ($current_child_count == ($total_childs - 1) && $loop_count == ($total_batches - 1)) {
 
-            $this->sendControltoCallback();
+            $aj_callbacks = config('ajimportdata.aj_callbacks');
+            $this->sendControltoCallback($aj_callbacks);
             Log::info('Import done. mailing error log file');
             $this->sendErrorLogFile();
 
@@ -1523,12 +1528,11 @@ class AjCsvFileImport
 
     }
 
-    public function sendControltoCallback()
+    public function sendControltoCallback($aj_callbacks, $args = array())
     {
 
         Log::info('Import done. sendControltoCallback');
-
-        $aj_callbacks = config('ajimportdata.aj_callbacks');
+        Log::info($aj_callbacks);
 
         if (!is_null($aj_callbacks) && is_array($aj_callbacks)) {
             foreach ($aj_callbacks as $aj_callback) {
@@ -1539,7 +1543,15 @@ class AjCsvFileImport
                 if ($class_path != '' && $function_name != '') {
                     $callback_obj = new $class_path;
 
-                    $result = call_user_func(array($callback_obj, $function_name));
+                    if(count($args)>0){
+                        $result = call_user_func_array(array($callback_obj, $function_name),array($args));
+                    }
+                    else{
+                        $result = call_user_func(array($callback_obj, $function_name));    
+                    }
+                    
+                    
+                    
 
                 }
 

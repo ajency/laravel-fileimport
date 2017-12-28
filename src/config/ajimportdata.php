@@ -18,12 +18,23 @@ $ajimport_config['fileheader'] = array('Id', 'Company Name', 'Add', 'City', 'Pin
 /* Define Call back after import is done */
 /*$ajimport_config['aj_callbacks'] = array(
                                    array('function_name'=>'create',
-                                         'class_path'   =>'\App\Http\Controllers\Test2controller',
+                                         'class_path'   =>'\App\Http\Controllers\Test1controller',
                                         ),
                                     array('function_name'=>'edit',
                                          'class_path'   =>'\App\Http\Controllers\TestController',
                                         )         
                                 );*/
+
+
+/*Callbacks after completion of each batch*/
+$ajimport_config['aj_batchcallbacks'] = array(
+                                   array('function_name'=>'create',
+                                         'class_path'   =>'\App\Http\Controllers\Test3controller',
+                                        ),
+                                    array('function_name'=>'edit',
+                                         'class_path'   =>'\App\Http\Controllers\Test4controller',
+                                        )         
+                                );                               
 
 /**
  * config to update any id column(for ex user_id) based on set of fields from child table(for ex user_communication table)
