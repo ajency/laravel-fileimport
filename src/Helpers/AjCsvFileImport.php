@@ -360,7 +360,7 @@ class AjCsvFileImport
         /*$mandatary_tmp_tblfields_ar = array();
 
         if (!is_null(config('ajimportdata.mandatary_tmp_tblfields'))) {
-            $mandatary_tmp_tblfields_ar = config('ajimportdata.mandatary_tmp_tblfields'); //Get manadatary fields on temp table
+        $mandatary_tmp_tblfields_ar = config('ajimportdata.mandatary_tmp_tblfields'); //Get manadatary fields on temp table
         }*/
 
         $mtable_fieldmaps = $mastertable_conf['fields_map'];
@@ -409,9 +409,9 @@ class AjCsvFileImport
 
                     /* OVERRIDE NULLABLE SET ON CHILD TABLE FIELD RULE, WHILE CREATING TEMP TABLE FIELD FOR SAME FIELD*/
                     /*if (in_array($tfield_name, $mandatary_tmp_tblfields_ar)) {
-                        $qry__create_table .= " NOT NULL ";
+                    $qry__create_table .= " NOT NULL ";
                     } else {
-                        $qry__create_table .= " DEFAULT NULL ";
+                    $qry__create_table .= " DEFAULT NULL ";
                     }*/
 
                     $qry__create_table .= " DEFAULT NULL ";
@@ -529,10 +529,7 @@ class AjCsvFileImport
         $temp_table_indexes    = array_merge($temp_table_indexes, $config_indexes_result['index_fields']);
         $qry_indexes .= $config_indexes_result['index_query'];
 
-        $qry_unique_fields           = "";
-        $config_unique_fields_result = $this->addConfigUniqueFieldOnTempTable();
-
-        $qry_unique_fields .= $config_unique_fields_result['unique_query'];
+        $qry_unique_fields = $this->addConfigUniqueFieldOnTempTable();
 
         /*echo "*************************";
         var_dump($this->temptable_fields);
@@ -691,17 +688,28 @@ class AjCsvFileImport
         if (!is_null($temp_tablename_unique_fields)) {
 
             if (is_array($temp_tablename_unique_fields) && count($temp_tablename_unique_fields) > 0) {
-                foreach ($additional_indexes as $value) {
+                foreach ($additional_indexes as $uniqindex_key => $uniqindex_value) {
 
-                    $uniq_field_name = $this->getFormatedFieldName($value);
-                    $qry_temptable_config_unique .= ", UNIQUE (" . $uniq_field_name . ")";
-                    $new_temp_table_unique[] = $uniq_field_name;
+                    if (is_array($uniqindex_value)) {
+                        $qry_temptable_config_unique .= ", CONSTRAINT " . $this->getFormatedFieldName($uniqindex_key) . " UNIQUE (";
+                        $cnt_uniq_index = 0;
+                        foreach ($uniqindex_value as $key => $value) {
+                            if ($cnt_uniq_index > 0) {
+                                $qry_temptable_config_unique .= ", ";
+                            }
+                            $qry_temptable_config_unique .= "`" . $this->getFormatedFieldName($value) . "`";
+                            $cnt_uniq_index++;
+                        }
+                        $qry_temptable_config_unique .= " ) ";
+                    }
+
                 }
             }
 
         }
 
-        return array('unique_query' => $qry_temptable_config_unique, 'unique_fields' => $new_temp_table_unique);
+        //return array('unique_query' => $qry_temptable_config_unique, 'unique_fields' => $new_temp_table_unique);
+        return $qry_temptable_config_unique;
 
     }
 
@@ -800,10 +808,6 @@ class AjCsvFileImport
 
     }
 
-
-
-
-
     /**
      * Mark records invalid If mandatary fields defined in configuration are null or empty in temp table .
      * For ex if Company_Name or  Pin_Code are null or empty, then the corresponding records will be marked as invalid
@@ -814,9 +818,9 @@ class AjCsvFileImport
 
         try {
 
-            $log_mandatary_tmp_tglfields_msg  = "";
-            $qry_mandatary_tmp_tblfields = "";
-            $loop_count      = $params['current_loop_count'];
+            $log_mandatary_tmp_tglfields_msg = "";
+            $qry_mandatary_tmp_tblfields     = "";
+            $loop_count                      = $params['current_loop_count'];
 
             $temp_tablename = config('ajimportdata.temptablename');
             $batchsize      = config('ajimportdata.batchsize');
@@ -839,7 +843,7 @@ class AjCsvFileImport
                                 $qry_mandatary_tmp_tblfields .= " OR ";
                                 $log_mandatary_tmp_tglfields_msg .= ", ";
                             }
-                            $qry_mandatary_tmp_tblfields .= $value." IS NULL OR  ".$value." = '' ";
+                            $qry_mandatary_tmp_tblfields .= $value . " IS NULL OR  " . $value . " = '' ";
                             $log_mandatary_tmp_tglfields_msg .= $value;
                             $cnt_fieldmatch++;
                         }

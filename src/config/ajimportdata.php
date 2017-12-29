@@ -35,7 +35,11 @@ $ajimport_config['fileheader'] = array('Id', 'Company Name', 'Add', 'City', 'Pin
 
 
 /** Allows to add unique contraint on temp table field */
-//$ajimport_config['uniquefields'] = array('Email1','Phone2');
+/*$ajimport_config['uniquefields'] = array(
+    'Email1_uniq' => array('Email1', 'Phone2'),
+    'region_uniq' => array('State', 'City'),
+
+);*/
 
 
 /** Mark records invalid on temp table if set of fields matches each other. For ex if Email1 & Email2 value matches each other in row it will be marked as invalid */
