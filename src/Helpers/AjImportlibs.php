@@ -241,7 +241,9 @@ class AjImportlibs
             $qry_test = "SELECT  'test_id', 'test_name' INTO OUTFILE '" . $file_path . "'
                                     FIELDS TERMINATED BY ','
                                     OPTIONALLY ENCLOSED BY '\"'
-                                    LINES TERMINATED BY '\n'";
+                                    LINES TERMINATED BY '\n' 
+                                    FROM users LIMIT 0,1
+                                    ";
             try {
 
                 Log:info($qry_test);
