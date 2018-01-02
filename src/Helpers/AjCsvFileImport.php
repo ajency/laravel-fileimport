@@ -782,7 +782,7 @@ class AjCsvFileImport
                             if ($cnt_fieldmatch > 0) {
                                 $qry_field_match .= " OR ";
                             }
-                            $qry_field_match .= "(" . $value[0] . " like " . $value[1] . ")  ";
+                            $qry_field_match .= "(" . $value[0] . " like " . $value[1] . " AND " . $value[0] . "!='' )  ";
                             $log_msg_fields .= " (" . $value[0] . " , " . $value[1] . ") , ";
                             $cnt_fieldmatch++;
                         }

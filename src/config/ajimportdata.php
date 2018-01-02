@@ -43,9 +43,9 @@ $ajimport_config['fileheader'] = array('Id', 'Company Name', 'Add', 'City', 'Pin
 
 
 /** Mark records invalid on temp table if set of fields matches each other. For ex if Email1 & Email2 value matches each other in row it will be marked as invalid */
-/*$ajimport_config['invalid_matches'] = array(['Email1','Email2'],
+$ajimport_config['invalid_matches'] = array(['Email1','Email2'],
                                          ['Mobile1','Mobile2']
-                                        );*/
+                                        );
 
 
 
