@@ -1417,7 +1417,7 @@ class AjCsvFileImport
 
                 $current_json_field_cnt = count($json_tmpfield);
 
-                $json_string    = 'CONCAT("{"';
+                $json_string.    = 'CONCAT("{"';
                 $json_field_cnt = 0;
 
                 foreach ($json_tmpfield as $json_key => $json_value) {
@@ -1451,7 +1451,7 @@ class AjCsvFileImport
 
             $colstoarrayfield_conf = $child_table_conf['colstoarrayfield'];
 
-            $colstoarrayfield_string = 'CONCAT("["';
+            $colstoarrayfield_string.= 'CONCAT("["';
             foreach ($colstoarrayfield_conf as $target_array_field => $array_tmpfield) {
 
                 $current_serialize_field_cnt = count($array_tmpfield);
