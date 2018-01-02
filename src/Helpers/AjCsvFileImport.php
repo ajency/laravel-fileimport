@@ -1413,11 +1413,16 @@ class AjCsvFileImport
 
             $json_fields_conf = $child_table_conf['jsonvalues'];
 
+            $cnt_main_json_field = 0;
             foreach ($json_fields_conf as $target_json_field => $json_tmpfield) {
 
                 $current_json_field_cnt = count($json_tmpfield);
 
-                $json_string.    = 'CONCAT("{"';
+                if($cnt_main_json_field>0){
+                    $json_string.=', ';   
+                }
+
+                $json_string.= 'CONCAT("{"';
                 $json_field_cnt = 0;
 
                 foreach ($json_tmpfield as $json_key => $json_value) {
@@ -1440,6 +1445,7 @@ class AjCsvFileImport
                 $json_string .= ',"' . '\"}")';
 
                 $child_fields_ar[] = $target_json_field;
+                $cnt_main_json_field++;
 
             }
 
@@ -1450,9 +1456,16 @@ class AjCsvFileImport
         if (isset($child_table_conf['colstoarrayfield'])) {
 
             $colstoarrayfield_conf = $child_table_conf['colstoarrayfield'];
+            $cnt_main_array_field = 0;
 
-            $colstoarrayfield_string.= 'CONCAT("["';
+            
             foreach ($colstoarrayfield_conf as $target_array_field => $array_tmpfield) {
+
+                if($cnt_main_array_field >0){
+                    $colstoarrayfield_string.= ', ';
+                }
+                
+                $colstoarrayfield_string.= 'CONCAT("["';
 
                 $current_serialize_field_cnt = count($array_tmpfield);
 
@@ -1474,9 +1487,11 @@ class AjCsvFileImport
                 // $colstoarrayfield_string.= implode('.\'","\'.',$array_field_collection);
 
                 $child_fields_ar[] = $target_array_field;
+                $colstoarrayfield_string .= ',"]")';
 
+                $cnt_main_array_field++;
             }
-            $colstoarrayfield_string .= ',"]")';
+            
 
         }
 
