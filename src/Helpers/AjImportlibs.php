@@ -249,11 +249,11 @@ class AjImportlibs
                 Log:info($qry_test);
                 DB::select($qry_test);
 
-                if (!File::exists($test_export_file_path)) {
+               /* if (!File::exists($test_export_file_path)) {
                     return array('result' => false, 'errors' => array("'" . $ajency_folder . "' Folder does not have write permission. Cannot proceed with import"));
-                } else {
+                } else {*/
                     return array('result' => true, 'errors' => array(),'logs'=>array());
-                }
+                //}
 
             } catch (\Illuminate\Database\QueryException $ex) {
 

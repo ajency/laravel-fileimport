@@ -768,6 +768,9 @@ class AjCsvFileImport
 
             $temp_table_ids_by_batch = $this->getTempTableIdsByBatch($limit, $batchsize);
 
+            Log::info('markRcordInvalidIfConfigFieldsMatches - configuration here ');
+            Log::info($conf_invalid_matches);
+
             if (!is_null($conf_invalid_matches)) {
 
                 if (is_array($conf_invalid_matches)) {
@@ -790,7 +793,7 @@ class AjCsvFileImport
                         $log_msg_fields = "Duplicate field matches " . $log_msg_fields;
 
                         $qry_field_match_main = " UPDATE " . $temp_tablename . " tmptble  SET aj_isvalid ='N', aj_error_log='" . $log_msg_fields . "', aj_processed='y'  WHERE " . $qry_field_match;
-
+                        Log::info($qry_field_match_main);
                         DB::update($qry_field_match_main);
                     }
                 }
