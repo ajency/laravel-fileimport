@@ -1386,12 +1386,17 @@ class AjCsvFileImport
         if (isset($child_table_conf['serializevalues'])) {
 
             $serialized_fields_conf = $child_table_conf['serializevalues'];
+            $cnt_main_serialize_field = 0;
 
             foreach ($serialized_fields_conf as $target_serialized_field => $serialize_tmpfield) {
 
                 $current_serialize_field_cnt = count($serialize_tmpfield);
 
-                $serialize_string = 'CONCAT("a:' . $current_serialize_field_cnt . ':{"';
+                if($cnt_main_serialize_field>0){
+                    $serialize_string.=", ";
+                }
+                
+                $serialize_string.= 'CONCAT("a:' . $current_serialize_field_cnt . ':{"';
 
                 foreach ($serialize_tmpfield as $serialize_key => $serialize_value) {
 
@@ -1402,6 +1407,8 @@ class AjCsvFileImport
                 $serialize_string .= ',"}")';
 
                 $child_fields_ar[] = $target_serialized_field;
+
+                $cnt_main_serialize_field++;
 
             }
 
