@@ -1081,8 +1081,8 @@ class AjCsvFileImport
 
         $childtables_conf_ar = $this->getChildTableConf(); //config('ajimportdata.childtables');
 
-        $total_loops = round($temp_records_count / $batchsize);
-        if ($total_loops <= 0) {
+        $total_loops = ceil($temp_records_count / $batchsize);
+        if ($temp_records_count >0 && $total_loops <= 0) {
             $total_loops = 1;
         }
 
@@ -1131,7 +1131,8 @@ class AjCsvFileImport
         print_r($child_table_conf_list);*/
 
         $batchsize = config('ajimportdata.batchsize'); //Get temp table name from config
-        $loops     = round($temp_records_count / $batchsize);
+        //$loops     = round($temp_records_count / $batchsize);
+        $loops     = ceil($temp_records_count / $batchsize);
 
         for ($child_count = 0; $child_count < $total_no_child_tables; $child_count++) {
 
