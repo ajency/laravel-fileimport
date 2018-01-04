@@ -25,7 +25,9 @@ $ajimport_msg_config['validate_file'] = array(
 $ajimport_msg_config['mandatory_fields_empty'] = array(
     'message' => 'Mandatary fields configured are empty or null');
 $ajimport_msg_config['download_temp_file'] = array(
-    'message' => "View the csv import data from ready table. <br/>");
+    'message' => "View the csv import data from ready table. <br/>",
+    'display' => false,
+);
 $ajimport_msg_config['run_import_job_queue'] = array(
     'message' => 'Listing Import is under process in background, you will receive an email with the upload status once done.', //*<b>Note: Please run this command to complete the import of data: <br/> \'php artisan queue:work --queue=validateunique,insert_records ajfileimportcon\'  </b>',*/
 

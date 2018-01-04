@@ -55,9 +55,9 @@ class AjCsvFileImport
     {
 
         $this->config_messages = config('ajimport.ajimportmessages');
-        $import_libs = new AjImportlibs();
+        $import_libs           = new AjImportlibs();
 
-        $this->msg               = $this->config_messages['file_permission_check']['message'];//"<br/> Checking the file permissions ....";
+        $this->msg               = $this->config_messages['file_permission_check']['message']; //"<br/> Checking the file permissions ....";
         $result_file_permissions = $import_libs->createTestImportFolder();
 
         if (count($result_file_permissions['errors']) > 0) {
@@ -65,34 +65,34 @@ class AjCsvFileImport
             return response()->json($this->ajx_return_logs());
         }
 
-        $this->msg = $this->config_messages['pending_job_check']['message'];//"<br/> Checking for pending FileImport pending jobs ...";
+        $this->msg = $this->config_messages['pending_job_check']['message']; //"<br/> Checking for pending FileImport pending jobs ...";
 
         $prev_pending_jobs = $this->areTherePreviousJobsPending();
 
         if ($prev_pending_jobs === true) {
 
-            $this->msg .= $this->config_messages['pending_job_check']['failure_msg'];//" - Error";
+            $this->msg .= $this->config_messages['pending_job_check']['failure_msg']; //" - Error";
             $this->logs[] = $this->msg;
             $this->msg    = "";
             return $this->ajx_return_logs();
 
         } else {
-            $this->msg .= $this->config_messages['pending_job_check']['success_msg'];//" - Passed";
+            $this->msg .= $this->config_messages['pending_job_check']['success_msg']; //" - Passed";
         }
 
         $this->logs[] = $this->msg;
 
-        $this->msg = $this->config_messages['table_exists_check']['message'];//"<br/> Checking if tables from configuration file exists in database....";
+        $this->msg = $this->config_messages['table_exists_check']['message']; //"<br/> Checking if tables from configuration file exists in database....";
         $result    = $this->checkIfAllConfigTablesExists();
 
         if ($result == true) {
 
-            $this->msg .= $this->config_messages['table_exists_check']['success_msg'];//" Passed ";
+            $this->msg .= $this->config_messages['table_exists_check']['success_msg']; //" Passed ";
             $this->logs[] = $this->msg;
 
         } else {
             //$import_libs->printLogs($this->getErrorLogs());
-            $this->msg .= $this->config_messages['table_exists_check']['failure_msg'];//" Failed ";
+            $this->msg .= $this->config_messages['table_exists_check']['failure_msg']; //" Failed ";
             $this->logs[] = $this->msg;
             $this->msg    = "";
             return response()->json($this->ajx_return_logs());
@@ -163,7 +163,7 @@ class AjCsvFileImport
             $pending_job_count = $res_pending_job_count[0]->pending_job_count;
 
             if ($pending_job_count > 0) {
-                $this->errors[] = $this->config_messages['pending_job_exists']['message'];//"There are pending jobs from previous import to be processed!! <br/> Please run job queue <b>'php artisan queue:work --queue=validateunique,insert_records ajfileimportcon'</b>";
+                $this->errors[] = $this->config_messages['pending_job_exists']['message']; //"There are pending jobs from previous import to be processed!! <br/> Please run job queue <b>'php artisan queue:work --queue=validateunique,insert_records ajfileimportcon'</b>";
                 return true;
             } else {
 
@@ -311,7 +311,7 @@ class AjCsvFileImport
 
         DB::connection()->disableQueryLog();
 
-        $this->msg = $this->config_messages['validate_file']['message'];//"<br/>Validating file....";
+        $this->msg = $this->config_messages['validate_file']['message']; //"<br/>Validating file....";
         $result    = $file->isValidFile();
 
         if ($result !== true) {
@@ -323,7 +323,7 @@ class AjCsvFileImport
 
             } else {
                 //echo "Invalid File.";
-                $this->msg .= $this->config_messages['validate_file']['failure_msg'];//" - Invalid File.";
+                $this->msg .= $this->config_messages['validate_file']['failure_msg']; //" - Invalid File.";
                 $this->errors[] = $this->msg;
             }
 
@@ -335,7 +335,7 @@ class AjCsvFileImport
 
             $import_libs->printLogs($file->getLogs());
             }*/
-            $this->msg .= $this->config_messages['validate_file']['success_msg'];//" - Valid File.";
+            $this->msg .= $this->config_messages['validate_file']['success_msg']; //" - Valid File.";
             $this->logs[] = $this->msg;
             $this->msg    = "";
             return true;
@@ -1084,7 +1084,7 @@ class AjCsvFileImport
         $childtables_conf_ar = $this->getChildTableConf(); //config('ajimportdata.childtables');
 
         $total_loops = ceil($temp_records_count / $batchsize);
-        if ($temp_records_count >0 && $total_loops <= 0) {
+        if ($temp_records_count > 0 && $total_loops <= 0) {
             $total_loops = 1;
         }
 
@@ -1103,12 +1103,20 @@ class AjCsvFileImport
 
         //echo "<br/><br/> <a href='" . route('downloadtemptablecsv') . "' target='_blank' >Click here</a> View the csv import data from ready table. <br/><b>Note: Please run this command to complete the import of data: <br/> 'php artisan queue:work --queue=validateunique,insert_records'  </b>";
 
+        $cur_msg = "";
+        if ($this->config_messages['download_temp_file']['display'] == true) {
+            $cur_msg = "<br/><br/> <a href='" . route('downloadtemptablecsv') . "' target='_blank' >Click here</a>" . $this->config_messages['download_temp_file']['message'];
 
-        if($this->config_messages['run_import_job_queue']['display']==true){
+        }
 
-            $this->logs[] = "<br/><br/> <a href='" . route('downloadtemptablecsv') . "' target='_blank' >Click here</a>".$this->config_messages['download_temp_file']['message'].$this->config_messages['run_import_job_queue']['message'];//"<br/><br/> <a href='" . route('downloadtemptablecsv') . "' target='_blank' >Click here</a> View the csv import data from ready table. <br/><b>Note: Please run this command to complete the import of data: <br/> 'php artisan queue:work --queue=validateunique,insert_records ajfileimportcon'  </b>";    
+        if ($this->config_messages['run_import_job_queue']['display'] == true) {
+
+            $cur_msg .= $this->config_messages['run_import_job_queue']['message']; //"<br/><br/> <a href='" . route('downloadtemptablecsv') . "' target='_blank' >Click here</a> View the csv import data from ready table. <br/><b>Note: Please run this command to complete the import of data: <br/> 'php artisan queue:work --queue=validateunique,insert_records ajfileimportcon'  </b>";
+
         }
         
+        $this->logs[] = $cur_msg;
+
         return array('logs' => $this->logs, 'errors' => $this->errors);
         Log::info("Executing schedule command");
         /* $app          = App::getFacadeRoot();
@@ -1139,7 +1147,7 @@ class AjCsvFileImport
 
         $batchsize = config('ajimportdata.batchsize'); //Get temp table name from config
         //$loops     = round($temp_records_count / $batchsize);
-        $loops     = ceil($temp_records_count / $batchsize);
+        $loops = ceil($temp_records_count / $batchsize);
 
         for ($child_count = 0; $child_count < $total_no_child_tables; $child_count++) {
 
@@ -1393,18 +1401,18 @@ class AjCsvFileImport
         $serialize_string = "";
         if (isset($child_table_conf['serializevalues'])) {
 
-            $serialized_fields_conf = $child_table_conf['serializevalues'];
+            $serialized_fields_conf   = $child_table_conf['serializevalues'];
             $cnt_main_serialize_field = 0;
 
             foreach ($serialized_fields_conf as $target_serialized_field => $serialize_tmpfield) {
 
                 $current_serialize_field_cnt = count($serialize_tmpfield);
 
-                if($cnt_main_serialize_field>0){
-                    $serialize_string.=", ";
+                if ($cnt_main_serialize_field > 0) {
+                    $serialize_string .= ", ";
                 }
-                
-                $serialize_string.= 'CONCAT("a:' . $current_serialize_field_cnt . ':{"';
+
+                $serialize_string .= 'CONCAT("a:' . $current_serialize_field_cnt . ':{"';
 
                 foreach ($serialize_tmpfield as $serialize_key => $serialize_value) {
 
@@ -1433,11 +1441,11 @@ class AjCsvFileImport
 
                 $current_json_field_cnt = count($json_tmpfield);
 
-                if($cnt_main_json_field>0){
-                    $json_string.=', ';   
+                if ($cnt_main_json_field > 0) {
+                    $json_string .= ', ';
                 }
 
-                $json_string.= 'CONCAT("{"';
+                $json_string .= 'CONCAT("{"';
                 $json_field_cnt = 0;
 
                 foreach ($json_tmpfield as $json_key => $json_value) {
@@ -1447,15 +1455,12 @@ class AjCsvFileImport
                     /* $json_string .= ',"\"' . $json_key . '\":"';
                     $json_string .= '"",' . $json_value . '';*/
 
-
-
                     /*//works if field not empty
                     if ($json_field_cnt > 0) {
-                        $json_string .= ',","';
+                    $json_string .= ',","';
                     }
                     $json_string .= ',"\"' . $json_key . '\":\"';
                     $json_string .= '",' . $json_value . '"';*/
-
 
                     if ($json_field_cnt > 0) {
                         $json_string .= ',"';
@@ -1463,17 +1468,12 @@ class AjCsvFileImport
                     $json_string .= ',"\"' . $json_key . '\":';
                     $json_string .= '\"\"",' . $json_value . ',"\"\"';
 
-
-
-
                     $json_field_cnt++;
 
                 }
                 //$json_string .= ',"}")';
-                
+
                 //$json_string .= ',"' . '}")'; //works if field not empty
-
-
 
                 $json_string .= '' . '}")';
 
@@ -1489,16 +1489,15 @@ class AjCsvFileImport
         if (isset($child_table_conf['colstoarrayfield'])) {
 
             $colstoarrayfield_conf = $child_table_conf['colstoarrayfield'];
-            $cnt_main_array_field = 0;
+            $cnt_main_array_field  = 0;
 
-            
             foreach ($colstoarrayfield_conf as $target_array_field => $array_tmpfield) {
 
-                if($cnt_main_array_field >0){
-                    $colstoarrayfield_string.= ', ';
+                if ($cnt_main_array_field > 0) {
+                    $colstoarrayfield_string .= ', ';
                 }
-                
-                $colstoarrayfield_string.= 'CONCAT("["';
+
+                $colstoarrayfield_string .= 'CONCAT("["';
 
                 $current_serialize_field_cnt = count($array_tmpfield);
 
@@ -1524,7 +1523,6 @@ class AjCsvFileImport
 
                 $cnt_main_array_field++;
             }
-            
 
         }
 
@@ -2087,7 +2085,7 @@ class AjCsvFileImport
 
             }
 
-            $error_string = $this->config_messages['config_tables_not_found']['message'];//"Following Tables mentioned in config file do not exists in database. <br/>";
+            $error_string = $this->config_messages['config_tables_not_found']['message']; //"Following Tables mentioned in config file do not exists in database. <br/>";
             $error_string .= implode(", ", $result_array_diff);
 
             $this->errors[] = $error_string;
