@@ -1439,18 +1439,36 @@ class AjCsvFileImport
                     $json_string .= ',"",",' . $json_value . ',"';*/
                     /* $json_string .= ',"\"' . $json_key . '\":"';
                     $json_string .= '"",' . $json_value . '';*/
+
+
+
+                    /*//works if field not empty
                     if ($json_field_cnt > 0) {
                         $json_string .= ',","';
                     }
+                    $json_string .= ',"\"' . $json_key . '\":\"';
+                    $json_string .= '",' . $json_value . '"';*/
 
-                    $json_string .= ',"\"' . $json_key . '\":"';
-                    $json_string .= '"",' . $json_value . '';
+
+                    if ($json_field_cnt > 0) {
+                        $json_string .= ',"';
+                    }
+                    $json_string .= ',"\"' . $json_key . '\":';
+                    $json_string .= '\"\"",' . $json_value . ',"\"\"';
+
+
+
 
                     $json_field_cnt++;
 
                 }
                 //$json_string .= ',"}")';
-                $json_string .= ',"' . '\"}")';
+                
+                //$json_string .= ',"' . '}")'; //works if field not empty
+
+
+
+                $json_string .= '' . '}")';
 
                 $child_fields_ar[] = $target_json_field;
                 $cnt_main_json_field++;
