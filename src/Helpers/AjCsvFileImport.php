@@ -33,6 +33,7 @@ class AjCsvFileImport
     private $temptable_fields;
     private $logs = [];
     private $messages;
+    private $config_messages;
 
     public function __construct($file_path = "")
     {
@@ -53,9 +54,10 @@ class AjCsvFileImport
     public function init($request)
     {
 
+        $config_messages = config('ajimport.ajimportmessages');
         $import_libs = new AjImportlibs();
 
-        $this->msg               = "<br/> Checking the file permissions ....";
+        $this->msg               = $config_messages['file_permission_check']['message'];//"<br/> Checking the file permissions ....";
         $result_file_permissions = $import_libs->createTestImportFolder();
 
         if (count($result_file_permissions['errors']) > 0) {
@@ -63,7 +65,7 @@ class AjCsvFileImport
             return response()->json($this->ajx_return_logs());
         }
 
-        $this->msg = "<br/> Checking for pending FileImport pending jobs ...";
+        $this->msg = $config_messages['pending_job_check']['message'];//"<br/> Checking for pending FileImport pending jobs ...";
 
         $prev_pending_jobs = $this->areTherePreviousJobsPending();
 
@@ -80,7 +82,7 @@ class AjCsvFileImport
 
         $this->logs[] = $this->msg;
 
-        $this->msg = "<br/> Checking if tables from configuration file exists in database....";
+        $this->msg = $config_messages['table_exists_check']['message'];//"<br/> Checking if tables from configuration file exists in database....";
         $result    = $this->checkIfAllConfigTablesExists();
 
         if ($result == true) {
@@ -161,7 +163,7 @@ class AjCsvFileImport
             $pending_job_count = $res_pending_job_count[0]->pending_job_count;
 
             if ($pending_job_count > 0) {
-                $this->errors[] = "There are pending jobs from previous import to be processed!! <br/> Please run job queue <b>'php artisan queue:work --queue=validateunique,insert_records ajfileimportcon'</b>";
+                $this->errors[] = $config_messages['pending_job_exists']['message'];//"There are pending jobs from previous import to be processed!! <br/> Please run job queue <b>'php artisan queue:work --queue=validateunique,insert_records ajfileimportcon'</b>";
                 return true;
             } else {
 
@@ -309,7 +311,7 @@ class AjCsvFileImport
 
         DB::connection()->disableQueryLog();
 
-        $this->msg = "<br/>Validating file....";
+        $this->msg = $config_messages['validate_file']['message'];//"<br/>Validating file....";
         $result    = $file->isValidFile();
 
         if ($result !== true) {
@@ -580,7 +582,7 @@ class AjCsvFileImport
             $create_table_result = DB::statement($qry__create_table);
             Log::info(($create_table_result));
             if ($create_table_result === true) {
-                $message = "Temp table' created successfully!!";
+                $message = "Temp table created successfully!!";
                 $success = true;
             }
 
@@ -854,7 +856,7 @@ class AjCsvFileImport
                         Log::info('markRcordInvalidIfConfigFieldsMatches:--- QUERY------------------------- ');
                         Log::info($qry_mandatary_tmp_tblfields);
 
-                        $log_mandatary_tmp_tglfields_msg = "Mandatary fields configured are empty or null " . $log_mandatary_tmp_tglfields_msg;
+                        $log_mandatary_tmp_tglfields_msg = $config_messages['mandatory_fields_empty']['message']; //"Mandatary fields configured are empty or null " . $log_mandatary_tmp_tglfields_msg;
 
                         $qry_mandatary_tmp_tblfields_main = " UPDATE " . $temp_tablename . " tmptble  SET aj_isvalid ='N', aj_error_log='" . $log_mandatary_tmp_tglfields_msg . "', aj_processed='y'  WHERE " . $qry_mandatary_tmp_tblfields;
 
@@ -1101,7 +1103,12 @@ class AjCsvFileImport
 
         //echo "<br/><br/> <a href='" . route('downloadtemptablecsv') . "' target='_blank' >Click here</a> View the csv import data from ready table. <br/><b>Note: Please run this command to complete the import of data: <br/> 'php artisan queue:work --queue=validateunique,insert_records'  </b>";
 
-        $this->logs[] = "<br/><br/> <a href='" . route('downloadtemptablecsv') . "' target='_blank' >Click here</a> View the csv import data from ready table. <br/><b>Note: Please run this command to complete the import of data: <br/> 'php artisan queue:work --queue=validateunique,insert_records ajfileimportcon'  </b>";
+
+        if($config_messages['download_temp_file']['display']==true && $config_messages['run_import_job_queue']['display']==true){
+
+            $this->logs[] = "<br/><br/> <a href='" . route('downloadtemptablecsv') . "' target='_blank' >Click here</a>".$config_messages['download_temp_file']['message'].$config_messages['run_import_job_queue']['message'];//"<br/><br/> <a href='" . route('downloadtemptablecsv') . "' target='_blank' >Click here</a> View the csv import data from ready table. <br/><b>Note: Please run this command to complete the import of data: <br/> 'php artisan queue:work --queue=validateunique,insert_records ajfileimportcon'  </b>";    
+        }
+        
         return array('logs' => $this->logs, 'errors' => $this->errors);
         Log::info("Executing schedule command");
         /* $app          = App::getFacadeRoot();
@@ -2080,7 +2087,7 @@ class AjCsvFileImport
 
             }
 
-            $error_string = "Following Tables mentioned in config file do not exists in database. <br/>";
+            $error_string = $config_messages['config_tables_not_found']['message']//"Following Tables mentioned in config file do not exists in database. <br/>";
             $error_string .= implode(", ", $result_array_diff);
 
             $this->errors[] = $error_string;

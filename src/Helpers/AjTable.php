@@ -22,6 +22,7 @@ class AjTable
     private $indexes;
     private $exists = false;
     private $errors = [];
+    private $config_messages;
 
     public function getFormatedTableHeaderName($header)
     {
@@ -32,6 +33,7 @@ class AjTable
     public function __construct($table_name)
     {
         $this->table_name = $table_name;
+        $config_messages = $config_messages = config('ajimport.ajimportmessages');
     }
 
     public function doesTableExist()
