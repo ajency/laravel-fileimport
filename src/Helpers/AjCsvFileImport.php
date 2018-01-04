@@ -1510,7 +1510,7 @@ class AjCsvFileImport
                     if ($cnt_cols_to_array > 0) {
                         $colstoarrayfield_string .= ',","';
                     }
-                    $colstoarrayfield_string .= '\'",' . $array_value . ',"\'"';
+                    $colstoarrayfield_string .= '\"",' . $array_value . ',"\""';
 
                     $cnt_cols_to_array++;
 
