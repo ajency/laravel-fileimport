@@ -22,7 +22,6 @@ class AjTable
     private $indexes;
     private $exists = false;
     private $errors = [];
-    
 
     public function getFormatedTableHeaderName($header)
     {
@@ -33,7 +32,12 @@ class AjTable
     public function __construct($table_name)
     {
         $this->table_name = $table_name;
-        
+        register_shutdown_function(array($this, '__destruct'));
+
+    }
+    public function __destruct()
+    {
+
     }
 
     public function doesTableExist()
@@ -238,7 +242,7 @@ class AjTable
         $child_outfile_name = $import_libs->generateUniqueOutfileName($file_prefix, $folder);
 
         //$file_path = str_replace("\\", "\\\\", $child_outfile_name);
-        $file_path              = $import_libs->formatImportExportFilePath($child_outfile_name);
+        $file_path = $import_libs->formatImportExportFilePath($child_outfile_name);
 
         $this->setTableSchema();
         $table_schema = $this->getTableSchema();
@@ -262,9 +266,7 @@ class AjTable
                                     LINES TERMINATED BY '\n'
                                     FROM `" . $this->table_name . "`  outtable  ";
 
-            
-
-            $this->debugLog(array('<br/> \n  downloadTableDataAsCsv  :----------------------------------',"filepath" . $file_path,$qry_select_valid_data));
+            $this->debugLog(array('<br/> \n  downloadTableDataAsCsv  :----------------------------------', "filepath" . $file_path, $qry_select_valid_data));
 
             DB::select($qry_select_valid_data);
             $headers = array('Content-Type' => 'text/csv');
@@ -306,7 +308,7 @@ class AjTable
      * @param      <type>  $)      { parameter_description }
      */
     public function debugLog($custom_logs = array())
-        {
+    {
 
         $import_debug = config('ajimportdata.debug');
         if ($import_debug == true) {
@@ -315,6 +317,5 @@ class AjTable
             }
         }
     }
-
 
 }

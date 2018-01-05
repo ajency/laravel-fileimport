@@ -35,12 +35,17 @@ class AjSchemaValidator
     public function __construct($tablename)
     {
         $this->table_name = $tablename;
+        register_shutdown_function(array($this, '__destruct'));
+
+    }
+    public function __destruct()
+    {
+
     }
 
     public function validateField($field_name, $field_data, $loop_count)
     {
 
-        
         $qry_index = "ALTER TABLE " . $this->table_name . ". ADD INDEX (" . $field_name . ")";
 
         try {
@@ -64,7 +69,6 @@ class AjSchemaValidator
     public function validateFieldLength($field_name, $field_data, $limit, $batchsize)
     {
 
-         
         $this->debugLog(array('update query start'));
         $temp_table_name = $this->table_name;
 
@@ -120,13 +124,10 @@ class AjSchemaValidator
 
         try {
 
-             
-$this->debugLog(array('<br/> \n update query  :----------------------------------',$qry));
-
+            $this->debugLog(array('<br/> \n update query  :----------------------------------', $qry));
 
             $update_res = DB::update($qry);
 
-             
             unset($update_res);
 
         } catch (\Illuminate\Database\QueryException $ex) {
@@ -135,7 +136,6 @@ $this->debugLog(array('<br/> \n update query  :---------------------------------
 
             $this->errors[] = $ex->getMessage();
 
-            
         }
         unset($qry);
         unset($$qry2);
@@ -186,8 +186,7 @@ $this->debugLog(array('<br/> \n update query  :---------------------------------
 
         $qry_validate_uniq = "UPDATE " . $temp_table_name . " SET aj_error_log='" . $uniq_field_error . "', aj_isvalid = 'N' WHERE " . $field_name . " IN (SELECT " . $field_name . " FROM (SELECT tt1." . $field_name . " as " . $field_name . "  FROM " . $temp_table_name . " tt1  group by " . $field_name . " having count(" . $field_name . ")>1) tt2)";
 
-         
-        $this->debugLog(array("-------------ValidatePrimaryUnique----------------",$qry_validate_uniq));
+        $this->debugLog(array("-------------ValidatePrimaryUnique----------------", $qry_validate_uniq));
 
         try {
 
@@ -213,28 +212,28 @@ $this->debugLog(array('<br/> \n update query  :---------------------------------
 
         try {
 
-           /* $qry_comma_seperated_temp_ids = "SELECT GROUP_CONCAT(id) as concat_ids FROM (SELECT id FROM " . $temp_tablename . " tt ORDER BY tt.id ASC LIMIT " . $limit . "," . $batchsize . ")  tt2 ";
+            /* $qry_comma_seperated_temp_ids = "SELECT GROUP_CONCAT(id) as concat_ids FROM (SELECT id FROM " . $temp_tablename . " tt ORDER BY tt.id ASC LIMIT " . $limit . "," . $batchsize . ")  tt2 ";
 
             Log:info($qry_comma_seperated_temp_ids);
             $res_comma_seperated_temp_ids = DB::select($qry_comma_seperated_temp_ids);
 
             return $res_comma_seperated_temp_ids[0]->concat_ids;*/
 
-            //No GROUP_CONCAT because of string limit 
+            //No GROUP_CONCAT because of string limit
             $qry_comma_seperated_temp_ids = "SELECT id as concat_id FROM (SELECT id FROM " . $temp_tablename . " tt ORDER BY tt.id ASC LIMIT " . $limit . "," . $batchsize . ")  tt2 ";
 
             Log:info($qry_comma_seperated_temp_ids);
-            $res_comma_seperated_temp_ids = DB::select($qry_comma_seperated_temp_ids);     
-            $count_comma_seperated_temp_ids  = count($res_comma_seperated_temp_ids);
-            if($count_comma_seperated_temp_ids>0){
-                for($cnt=0;$cnt<$count_comma_seperated_temp_ids;$cnt++){
-                    $temp_table_ids[] = $res_comma_seperated_temp_ids[$cnt]->concat_id;     
+            $res_comma_seperated_temp_ids   = DB::select($qry_comma_seperated_temp_ids);
+            $count_comma_seperated_temp_ids = count($res_comma_seperated_temp_ids);
+            if ($count_comma_seperated_temp_ids > 0) {
+                for ($cnt = 0; $cnt < $count_comma_seperated_temp_ids; $cnt++) {
+                    $temp_table_ids[] = $res_comma_seperated_temp_ids[$cnt]->concat_id;
                 }
-                
+
             }
 
-            $temp_table_concat_ids = implode(",",$temp_table_ids);
-            
+            $temp_table_concat_ids = implode(",", $temp_table_ids);
+
             return $temp_table_concat_ids;
 
         } catch (\Illuminate\Database\QueryException $ex) {
@@ -251,7 +250,7 @@ $this->debugLog(array('<br/> \n update query  :---------------------------------
      * @param      <type>  $)      { parameter_description }
      */
     public function debugLog($custom_logs = array())
-        {
+    {
 
         $import_debug = config('ajimportdata.debug');
         if ($import_debug == true) {

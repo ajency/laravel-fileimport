@@ -15,6 +15,16 @@ use \Mail;
 class AjImportlibs
 {
 
+    public function __construct()
+    {
+        register_shutdown_function(array($this, '__destruct'));
+    }
+
+    public function __destruct()
+    {
+
+    }
+
     public function custom_mysql_real_escape($inp)
     {
 
@@ -40,10 +50,8 @@ class AjImportlibs
     {
         $default_params = array('permissions' => 0777, 'recursive' => true, 'force' => true);
         $params         = array_merge($default_params, $params);
-        
 
-
-        $this->debugLog(array('createDirectoryIfDontExists:-----------------------------',$params));
+        $this->debugLog(array('createDirectoryIfDontExists:-----------------------------', $params));
         extract($params);
 
         if (!$this->is_directory_exists($filepath)) {

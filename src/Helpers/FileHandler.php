@@ -29,9 +29,13 @@ class FileHandler
         if (isset($param['filepath'])) {
             $this->file_path = $param['filepath'];
         }
+        register_shutdown_function(array($this, '__destruct'));
 
     }
+     public function __destruct()
+    {
 
+    }
     public function getErrors()
     {
         return $this->errors;
