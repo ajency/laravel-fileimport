@@ -127,6 +127,8 @@ class AjCsvFileImport
         $this->setFilePath($file_path);
         $this->importFileData($file_handle);
 
+        unset($import_libs);
+
         return response()->json($this->ajx_return_logs());
 
     }
@@ -196,7 +198,10 @@ class AjCsvFileImport
         foreach ($folder_to_clean as $folder) {
             $result = File::cleanDirectory($folder);
         }
-        
+
+        $result = null;
+        unset($result);
+
     }
 
     public function setFilePath($file_path)
@@ -315,7 +320,7 @@ class AjCsvFileImport
 
     public function validateFile($file)
     {
-        $import_libs = new AjImportlibs();
+        //$import_libs = new AjImportlibs();
 
         DB::connection()->disableQueryLog();
 
@@ -693,7 +698,7 @@ class AjCsvFileImport
         $temp_tablename_unique_fields = config('ajimportdata.uniquefields');
 
         $qry_temptable_config_unique = "";
-        $new_temp_table_unique       = [];
+        //$new_temp_table_unique       = [];
 
         $additional_indexes = array_diff($temp_tablename_unique_fields, $temp_table_unique);
         if (!is_null($temp_tablename_unique_fields)) {
@@ -891,7 +896,7 @@ class AjCsvFileImport
     public function update_field_temp_tbl_with_existing_child_records_by_conf($params)
     {
 
-        $import_libs      = new AjImportlibs();
+        //$import_libs      = new AjImportlibs();
         $child_table_conf = $params['childtable'];
 
         $total_childs        = $params['total_childs'];
@@ -1014,6 +1019,11 @@ class AjCsvFileImport
             // $pdo_warnings = $pdo_obj->exec('SHOW WARNINGS');
 
             $this->debugLog(array($qry_load_data, $result));
+            
+
+            unset($result);
+            unset($import_libs);
+
 
             $this->validateTempTableFields();
 
@@ -1183,6 +1193,9 @@ class AjCsvFileImport
 
         }
 
+        $child_table = null;
+        unset($child_table);
+
     }
 
     public function addInsertRecordsQueue($params)
@@ -1223,6 +1236,9 @@ class AjCsvFileImport
             $this->processTempTableFieldValidation($job_params);
 
         }
+
+        $child_table = null;
+        unset($child_table);
 
     }
 
@@ -1304,6 +1320,9 @@ class AjCsvFileImport
                 $this->update_field_temp_tbl_with_existing_child_records_by_conf($params);
             }
         }
+
+        $child_table = null;
+        unset($child_table);
 
         /* $job_params = array('childtable' => $child_table_conf, 'loop_count' => $loop_count, 'type' => 'insertvalidchilddata');
         AjImportDataJob::dispatch($job_params)->onQueue('insertvalidchilddata');*/
@@ -1526,6 +1545,8 @@ Load valid data from temp table into child table by batch
                 $cnt_main_array_field++;
             }
 
+
+
         }
 
         /*Selected columns in a record make new indivisual records*/
@@ -1685,6 +1706,7 @@ Load valid data from temp table into child table by batch
             $job_params_update_child_id = array('childtable' => $child_table_conf, 'current_loop_count' => $loop_count, 'type' => 'tempupdatechildid', 'total_childs' => $total_childs, 'total_loops' => $total_batches, 'current_child_count' => $current_child_count);
 
             //if($loop_count==0 && $current_child_count==0){
+            unset($import_libs);
             $this->UpdateTempTableWithChildInsertIds($job_params_update_child_id);
             //}
 
@@ -1943,6 +1965,9 @@ Load valid data from temp table into child table by batch
         $temptable_db->setTableSchema();
         $temptable_schema = $temptable_db->getTableSchema();
 
+        $temptable_db = null;
+        unset($temptable_db);
+
         foreach ($temptable_schema as $field_value) {
             $fields_names_ar[] = $field_value->Field;
         }
@@ -2005,6 +2030,7 @@ Load valid data from temp table into child table by batch
         //$mail_params = array('recipient' => $recipient, 'attachment' => $errorlog_outfile_path);
         if (is_array($mail_params) && isset($mail_params['to'])) {
             $import_libs->sendMail($mail_params);
+            unset($import_libs);
         }
 
     }

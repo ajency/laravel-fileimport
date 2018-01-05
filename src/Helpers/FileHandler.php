@@ -32,7 +32,7 @@ class FileHandler
         register_shutdown_function(array($this, '__destruct'));
 
     }
-     public function __destruct()
+    public function __destruct()
     {
 
     }
