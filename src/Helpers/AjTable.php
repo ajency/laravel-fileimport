@@ -262,9 +262,9 @@ class AjTable
                                     LINES TERMINATED BY '\n'
                                     FROM `" . $this->table_name . "`  outtable  ";
 
-            Log::info('<br/> \n  downloadTableDataAsCsv  :----------------------------------');
-            Log::info("filepath" . $file_path);
-            Log::info($qry_select_valid_data);
+            
+
+            $this->debugLog(array('<br/> \n  downloadTableDataAsCsv  :----------------------------------',"filepath" . $file_path,$qry_select_valid_data));
 
             DB::select($qry_select_valid_data);
             $headers = array('Content-Type' => 'text/csv');
@@ -299,5 +299,22 @@ class AjTable
 
         $data = array("errors" => $this->errors, "logs" => $this->logs, "msg" => $this->msg);
     }
+
+    /**
+     * Display queries debug messages in log file
+     *
+     * @param      <type>  $)      { parameter_description }
+     */
+    public function debugLog($custom_logs = array())
+        {
+
+        $import_debug = config('ajimportdata.debug');
+        if ($import_debug == true) {
+            foreach ($custom_logs as $value) {
+                Log::info($value);
+            }
+        }
+    }
+
 
 }

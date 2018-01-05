@@ -6,8 +6,8 @@ namespace Ajency\Ajfileimport\Helpers;
 use Ajency\Ajfileimport\Mail\AjSendMail;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
-use \Mail;
 use Log;
+use \Mail;
 
 /**
  * Class for aj importlibs.
@@ -40,8 +40,10 @@ class AjImportlibs
     {
         $default_params = array('permissions' => 0777, 'recursive' => true, 'force' => true);
         $params         = array_merge($default_params, $params);
-        Log::info('createDirectoryIfDontExists:-----------------------------' );
-        Log::info($params );
+        
+
+
+        $this->debugLog(array('createDirectoryIfDontExists:-----------------------------',$params));
         extract($params);
 
         if (!$this->is_directory_exists($filepath)) {
@@ -49,9 +51,9 @@ class AjImportlibs
         }
 
         if ($this->is_directory_exists($filepath)) {
-            return array('result' => false, 'errors' => array('Please check folder permissions. Directory "' . $filepath . '" cannot be created. Cannot proceed with import'),'logs'=>array());
+            return array('result' => false, 'errors' => array('Please check folder permissions. Directory "' . $filepath . '" cannot be created. Cannot proceed with import'), 'logs' => array());
         } else {
-            return array('result' => true, 'errors' => array(),'logs'=>array());
+            return array('result' => true, 'errors' => array(), 'logs' => array());
         }
 
     }
@@ -220,12 +222,10 @@ class AjImportlibs
 
         $ajency_folder = $import_export_temp_dir . "/Ajency/";
 
-
         if (!$this->is_directory_exists($ajency_folder)) {
 
             $result_folder_create = $this->createDirectoryIfDontExists($ajency_folder);
-        }
-        else{
+        } else {
             $result_folder_create['result'] = true;
         }
 
@@ -236,12 +236,12 @@ class AjImportlibs
             $test_export_file_path = $this->generateUniqueOutfileName($file_prefix, $ajency_folder);
 
             //$file_path = str_replace("\\", "\\\\", $test_export_file_path);
-            $file_path =  $this->formatImportExportFilePath($test_export_file_path);
+            $file_path = $this->formatImportExportFilePath($test_export_file_path);
 
             $qry_test = "SELECT  'test_id', 'test_name' INTO OUTFILE '" . $file_path . "'
                                     FIELDS TERMINATED BY ','
                                     OPTIONALLY ENCLOSED BY '\"'
-                                    LINES TERMINATED BY '\n' 
+                                    LINES TERMINATED BY '\n'
                                     FROM users LIMIT 0,1
                                     ";
             try {
@@ -249,20 +249,20 @@ class AjImportlibs
                 Log:info($qry_test);
                 DB::select($qry_test);
 
-               /* if (!File::exists($test_export_file_path)) {
-                    return array('result' => false, 'errors' => array("'" . $ajency_folder . "' Folder does not have write permission. Cannot proceed with import"));
+                /* if (!File::exists($test_export_file_path)) {
+                return array('result' => false, 'errors' => array("'" . $ajency_folder . "' Folder does not have write permission. Cannot proceed with import"));
                 } else {*/
-                    return array('result' => true, 'errors' => array(),'logs'=>array());
+                return array('result' => true, 'errors' => array(), 'logs' => array());
                 //}
 
             } catch (\Illuminate\Database\QueryException $ex) {
 
                 $error_msg = $ex->getMessage();
 
-                if( stristr($error_msg,'create/write')!=false){
-                    $error_msg = "Please set write permission for folder '".$ajency_folder."' and Upload the file again.<br/> ".$error_msg ;
+                if (stristr($error_msg, 'create/write') != false) {
+                    $error_msg = "Please set write permission for folder '" . $ajency_folder . "' and Upload the file again.<br/> " . $error_msg;
                 }
-                return array('result' => false, 'errors' => array($error_msg), 'logs'=>array());
+                return array('result' => false, 'errors' => array($error_msg), 'logs' => array());
 
             }
 
@@ -278,6 +278,22 @@ class AjImportlibs
         $file_path = str_replace("\\", "\\\\", $file_path);
         $file_path = str_replace("/", "//", $file_path);
         return $file_path;
+    }
+
+    /**
+     * Display queries debug messages in log file
+     *
+     * @param      <type>  $)      { parameter_description }
+     */
+    public function debugLog($custom_logs = array())
+    {
+
+        $import_debug = config('ajimportdata.debug');
+        if ($import_debug == true) {
+            foreach ($custom_logs as $value) {
+                Log::info($value);
+            }
+        }
     }
 
 }

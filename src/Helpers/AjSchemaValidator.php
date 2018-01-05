@@ -40,7 +40,7 @@ class AjSchemaValidator
     public function validateField($field_name, $field_data, $loop_count)
     {
 
-        Log::info("test log");
+        
         $qry_index = "ALTER TABLE " . $this->table_name . ". ADD INDEX (" . $field_name . ")";
 
         try {
@@ -64,7 +64,8 @@ class AjSchemaValidator
     public function validateFieldLength($field_name, $field_data, $limit, $batchsize)
     {
 
-        Log::info('update query start');
+         
+        $this->debugLog(array('update query start'));
         $temp_table_name = $this->table_name;
 
         if (!isset($field_data->maxlength) && !isset($field_data->maxvalue)) {
@@ -119,13 +120,13 @@ class AjSchemaValidator
 
         try {
 
-            Log::info('<br/> \n update query  :----------------------------------');
-            Log::info($qry);
+             
+$this->debugLog(array('<br/> \n update query  :----------------------------------',$qry));
+
 
             $update_res = DB::update($qry);
 
-            /*Log::info($update_res);
-            Log::info("==========================================================================================");*/
+             
             unset($update_res);
 
         } catch (\Illuminate\Database\QueryException $ex) {
@@ -134,9 +135,7 @@ class AjSchemaValidator
 
             $this->errors[] = $ex->getMessage();
 
-            /*Log::info($ex->getMessage());
-        Log::info($ex);
-        Log::info("*********************************************************************");*/
+            
         }
         unset($qry);
         unset($$qry2);
@@ -187,8 +186,8 @@ class AjSchemaValidator
 
         $qry_validate_uniq = "UPDATE " . $temp_table_name . " SET aj_error_log='" . $uniq_field_error . "', aj_isvalid = 'N' WHERE " . $field_name . " IN (SELECT " . $field_name . " FROM (SELECT tt1." . $field_name . " as " . $field_name . "  FROM " . $temp_table_name . " tt1  group by " . $field_name . " having count(" . $field_name . ")>1) tt2)";
 
-        Log::info("-------------ValidatePrimaryUnique----------------");
-        Log::info($qry_validate_uniq);
+         
+        $this->debugLog(array("-------------ValidatePrimaryUnique----------------",$qry_validate_uniq));
 
         try {
 
@@ -244,6 +243,22 @@ class AjSchemaValidator
 
         }
 
+    }
+
+    /**
+     * Display queries debug messages in log file
+     *
+     * @param      <type>  $)      { parameter_description }
+     */
+    public function debugLog($custom_logs = array())
+        {
+
+        $import_debug = config('ajimportdata.debug');
+        if ($import_debug == true) {
+            foreach ($custom_logs as $value) {
+                Log::info($value);
+            }
+        }
     }
 
 }
