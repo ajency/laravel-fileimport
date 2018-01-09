@@ -261,7 +261,7 @@ class FileHandler
                         Log::info('==================================' . $row . ' - check_if_records_exists=======================================');
                         if (trim($value) != '') {
                             $data_row_found = true;
-                            break;
+                            return $data_row_found;
                         }
                     }
                 }

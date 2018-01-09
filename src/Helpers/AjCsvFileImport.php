@@ -782,7 +782,7 @@ class AjCsvFileImport
 
             $conf_invalid_matches = config('ajimportdata.invalid_matches');
 
-            $temp_table_ids_by_batch = $this->getTempTableIdsByBatch($limit, $batchsize);
+            $temp_table_ids_by_batch = $this->temp_table_ids_by_batch;
 
             $this->debugLog(array('markRcordInvalidIfConfigFieldsMatches - configuration here ', $conf_invalid_matches));
 
@@ -849,7 +849,7 @@ class AjCsvFileImport
 
             $conf_mandatary_tmp_tblfields = config('ajimportdata.mandatary_tmp_tblfields');
 
-            $temp_table_ids_by_batch = $this->getTempTableIdsByBatch($limit, $batchsize);
+            $temp_table_ids_by_batch = $this->temp_table_ids_by_batch;
 
             if (!is_null($conf_mandatary_tmp_tblfields)) {
 
@@ -920,7 +920,7 @@ class AjCsvFileImport
 
         if (!is_null($tables_to_update_temp)) {
 
-            $temp_table_ids_by_batch = $this->getTempTableIdsByBatch($limit, $batchsize);
+            $temp_table_ids_by_batch = $this->temp_table_ids_by_batch;
 
             foreach ($tables_to_update_temp as $tables_to_update_temp) {
 
@@ -1019,11 +1019,9 @@ class AjCsvFileImport
             // $pdo_warnings = $pdo_obj->exec('SHOW WARNINGS');
 
             $this->debugLog(array($qry_load_data, $result));
-            
 
             unset($result);
             unset($import_libs);
-
 
             $this->validateTempTableFields();
 
@@ -1213,6 +1211,10 @@ class AjCsvFileImport
 
         $batchsize = config('ajimportdata.batchsize'); //Get temp table name from config
         // $loops     = round($temp_records_count / $batchsize);
+
+        $loop_count                    = $params['current_loop_count'];
+        $limit                         = $loop_count * $batchsize;
+        $this->temp_table_ids_by_batch = $this->getTempTableIdsByBatch($limit, $batchsize);
 
         $this->markRcordInvalidIfConfigFieldsMatches($params);
         $this->markInvalidIfMandataryTmpTblFieldsAreEmpty($params);
@@ -1545,8 +1547,6 @@ Load valid data from temp table into child table by batch
                 $cnt_main_array_field++;
             }
 
-
-
         }
 
         /*Selected columns in a record make new indivisual records*/
@@ -1664,12 +1664,21 @@ Load valid data from temp table into child table by batch
                 $from_field_str = $temp_tablename . " outtable WHERE outtable.id in ";
             }
 
+            $temp_table_ids_by_batch = $this->temp_table_ids_by_batch;
+
+            /* $qry_select_valid_data .= " INTO OUTFILE '" . $file_path . "'
+            FIELDS TERMINATED BY ','
+            OPTIONALLY ENCLOSED BY '\"'
+            ESCAPED BY ''
+            LINES TERMINATED BY '\n'
+            FROM " . $from_field_str . " (SELECT id FROM (SELECT id FROM " . $temp_tablename . " tt   ORDER BY tt.id ASC LIMIT " . $limit . "," . $batchsize . ") tt2 )  AND  aj_isvalid!='N' " . $additional_where_condn . " order by outtable.id ASC";*/
+
             $qry_select_valid_data .= " INTO OUTFILE '" . $file_path . "'
                                     FIELDS TERMINATED BY ','
                                     OPTIONALLY ENCLOSED BY '\"'
                                     ESCAPED BY ''
                                     LINES TERMINATED BY '\n'
-                                    FROM " . $from_field_str . " (SELECT id FROM (SELECT id FROM " . $temp_tablename . " tt   ORDER BY tt.id ASC LIMIT " . $limit . "," . $batchsize . ") tt2 )  AND  aj_isvalid!='N' " . $additional_where_condn . " order by outtable.id ASC";
+                                    FROM " . $from_field_str . " (" . $temp_table_ids_by_batch . ")  AND  aj_isvalid!='N' " . $additional_where_condn . " order by outtable.id ASC";
 
             $this->debugLog(array('<br/> \n  validchilddata OUTFILE query  :----------------------------------', "filepath" . $file_path, $qry_select_valid_data));
 
@@ -1707,6 +1716,7 @@ Load valid data from temp table into child table by batch
 
             //if($loop_count==0 && $current_child_count==0){
             unset($import_libs);
+            unset($result);
             $this->UpdateTempTableWithChildInsertIds($job_params_update_child_id);
             //}
 
@@ -1747,7 +1757,7 @@ Load valid data from temp table into child table by batch
 
         $child_insert_id_on_temp_table = $this->getFormatedFieldName($child_table_conf['name']) . "_id"; // $child_table_conf['insertid_temptable'];
 
-        $temp_table_ids_by_batch = $this->getTempTableIdsByBatch($limit, $batchsize);
+        $temp_table_ids_by_batch = $this->temp_table_ids_by_batch;
 
         if (isset($child_table_conf['insertid_childtable'])) {
 
@@ -2133,7 +2143,7 @@ Load valid data from temp table into child table by batch
     {
 
         $qry_update1             = "";
-        $temp_table_ids_by_batch = $this->getTempTableIdsByBatch($limit, $batchsize);
+        $temp_table_ids_by_batch = $this->temp_table_ids_by_batch;
 
         foreach ($columnupdatevalues as $column => $colvalues) {
 
@@ -2171,7 +2181,7 @@ Load valid data from temp table into child table by batch
     public function setProcessed($temp_tablename, $limit, $batchsize)
     {
 
-        $temp_table_ids_by_batch = $this->getTempTableIdsByBatch($limit, $batchsize);
+        $temp_table_ids_by_batch = $this->temp_table_ids_by_batch;
 
         $this->debugLog(array('<br/> \n  setProcessed '));
         /*$qry_set_processed = "UPDATE " . $temp_tablename . " tmpdata
@@ -2200,7 +2210,7 @@ Load valid data from temp table into child table by batch
     {
         $temp_tablename = config('ajimportdata.temptablename');
 
-        $temp_table_ids_by_batch = $this->getTempTableIdsByBatch($limit, $batchsize);
+        $temp_table_ids_by_batch = $this->temp_table_ids_by_batch;
 
         $qry_set_invalid = "UPDATE " . $temp_tablename . " tmpdata
                                 SET
@@ -2225,7 +2235,7 @@ Load valid data from temp table into child table by batch
     public function updateTableFieldBySlug($tablename, $field_slug, $limit, $batchsize)
     {
 
-        $temp_table_ids_by_batch = $this->getTempTableIdsByBatch($limit, $batchsize);
+        $temp_table_ids_by_batch = $this->temp_table_ids_by_batch;
 
         $qry_update1 = " SET ";
 
