@@ -147,6 +147,7 @@ class FileHandler
                 if ($config_fileheaders_count != $file_headers_count) {
                     $this->errors[]           = "<p class='default-size  text-failure'>Error: Header count mismatched <br/> File Headers count: " . $file_headers_count . " <br/> Config file header count:" . $config_fileheaders_count."</p>";
                     $this->header_count_match = false;
+                    $this->header_matched      = false;
                     break;
                 } else {
 
