@@ -49,7 +49,7 @@ class AjImportlibs
         }
 
         if ($this->is_directory_exists($filepath)) {
-            return array('result' => false, 'errors' => array('Please check folder permissions. Directory "' . $filepath . '" cannot be created. Cannot proceed with import'),'logs'=>array());
+            return array('result' => false, 'errors' => array('<p class="default-size  text-failure">Please check folder permissions. Directory "' . $filepath . '" cannot be created. Cannot proceed with import</p>'),'logs'=>array());
         } else {
             return array('result' => true, 'errors' => array(),'logs'=>array());
         }
@@ -215,7 +215,7 @@ class AjImportlibs
         $import_export_temp_dir = $this->getTempImportExportDirectory();
 
         if ($import_export_temp_dir == "" || is_null($import_export_temp_dir || $import_export_temp_dir == false)) {
-            return array('result' => false, 'errors' => 'Import directory is not set. Cannot proceed with import. Set "import_folder" in config file or set Mysql secure_file_priv/tmp folder.');
+            return array('result' => false, 'errors' => '<p class="default-size  text-failure">Import directory is not set. Cannot proceed with import. Set "import_folder" in config file or set Mysql secure_file_priv/tmp folder.</p>');
         }
 
         $ajency_folder = $import_export_temp_dir . "/Ajency/";
@@ -260,7 +260,7 @@ class AjImportlibs
                 $error_msg = $ex->getMessage();
 
                 if( stristr($error_msg,'create/write')!=false){
-                    $error_msg = "Please set write permission for folder '".$ajency_folder."' and Upload the file again.<br/> ".$error_msg ;
+                    $error_msg = "<p class='default-size  text-failure'>Please set write permission for folder '".$ajency_folder."' and Upload the file again.<br/> ".$error_msg."</p>" ;
                 }
                 return array('result' => false, 'errors' => array($error_msg), 'logs'=>array());
 
