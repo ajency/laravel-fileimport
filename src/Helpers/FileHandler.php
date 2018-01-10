@@ -23,6 +23,7 @@ class FileHandler
     private $logs               = [];
     private $msg                = '';
     private $headers            = [];
+    private $config_messages;
 
     public function __construct($param = array())
     {
@@ -30,6 +31,8 @@ class FileHandler
             $this->file_path = $param['filepath'];
         }
         register_shutdown_function(array($this, '__destruct'));
+
+        $this->config_messages = config('ajimport.ajimportmessages');
 
     }
     public function __destruct()
@@ -70,7 +73,7 @@ class FileHandler
 
         if (is_null($request->file('ajfile'))) {
             //echo "Please select file.";
-            $this->errors[] = "Please select file.";
+            $this->errors[] = "<p class='default-size  text-failure'>Please select file.</p>";
             return false;
         }
 
@@ -78,7 +81,7 @@ class FileHandler
 
         if (!file_exists($temp_path)) {
             //echo "Please select file.";
-            $this->errors[] = "Please select file.";
+            $this->errors[] = "<p class='default-size  text-failure'>Please select file.</p>";
             return false;
         }
 
@@ -86,8 +89,13 @@ class FileHandler
 
         $config_file_type = config('ajimportdata.filetype');
 
+        
+
+
         if ($config_file_type != $file_extension) {
-            $this->errors[] = "File extension not supported for import. Please try uploading file of type '" . $config_file_type . "'";
+          //  $this->errors[] = "<p class='default-size  text-failure'>File extension not supported for import. Please try uploading file of type '" . $config_file_type . "'</p>";
+            $this->errors[] = "<p class='default-size  text-failure'>File extension not supported for import. Please try uploading file of type '" . $config_file_type . "'</p>";
+
             return false;
         }
 
@@ -141,16 +149,17 @@ class FileHandler
                 /*print_r($config_fileheaders);
                 echo " config header count :". $config_fileheaders_count . "-- File Header count:" . $file_headers_count;*/
                 if ($config_fileheaders_count != $file_headers_count) {
-                    $this->errors[]           = "Error: Header count mismatched <br/> File Headers count: " . $file_headers_count . " <br/> Config file header count:" . $config_fileheaders_count;
+                    $this->errors[]           = "<p class='default-size  text-failure'>Error: Header count mismatched <br/> File Headers count: " . $file_headers_count . " <br/> Config file header count:" . $config_fileheaders_count."</p>";
                     $this->header_count_match = false;
+                    $this->header_matched      = false;
                     break;
                 } else {
 
-                    $this->logs[] = "Header count matched ";
+                    $this->logs[] = "<p class='default-size  text-success'>Header count matched</p> ";
                 }
 
                 if ($is_data_exists == false) {
-                    $this->errors[]         = "<br/>Error:  File contains no records to insert";
+                    $this->errors[]         = "<p class='default-size  text-failure'>Error:  File contains no records to insert</p>";
                     $this->file_data_exists = false;
                     break;
                 }
@@ -170,7 +179,7 @@ class FileHandler
                 }
 
                 if (count($headers_mismatch_fields) > 0) {
-                    $this->errors[] = "<br/> <b>Error: File Headers mismatched with the configuration for the following <br/> Config Headers     :    File Headers <br/></b>" . implode("<br/> ", $headers_mismatch_fields);
+                    $this->errors[] = "<p class='default-size  text-failure'> <b>Error: File Headers mismatched with the configuration for the following <br/> Config Headers     :    File Headers <br/></b>" . implode("<br/> ", $headers_mismatch_fields)."</p>";
                 }
 
                 $this->headers = $config_fileheaders;
@@ -178,13 +187,13 @@ class FileHandler
                 break;
 
             default:
-                $this->errors[] = 'Invalid file type configured';
+                $this->errors[] = '<p class="default-size  text-failure">Invalid file type configured</p>';
                 break;
 
         }
 
         if ($this->header_matched == true) {
-            $this->logs[] = "Headers matched with the configuration!!";
+            $this->logs[] = "<p class='default-size  text-failure'>Headers matched with the configuration!!</p>";
         }
 
         $success = true;

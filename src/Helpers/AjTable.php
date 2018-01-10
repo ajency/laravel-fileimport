@@ -52,7 +52,7 @@ class AjTable
             if (is_array($table_exists) && count($table_exists) > 0) {
                 $this->exists = true;
             } else {
-                $this->errors[] = "Table '" . $this->table_name . "' does not exist.";
+                $this->errors[] = "<p class='default-size  text-failure'>Table '" . $this->table_name . "' does not exist.</p>";
             }
 
             return $this->exists;
@@ -78,11 +78,12 @@ class AjTable
 
         if ($table_exists == false || count($this->errors) > 0) {
 
-            echo "<br>Cannot proceed with import. Please correct the following errors first:<br>";
+            echo "<p class='default-size  text-failure'>Cannot proceed with import. Please correct the following errors first:<br>";
             $eror_cnt = 1;
             foreach ($this->errors as $key => $value) {
                 echo "<br>" . $eror_cnt . ". " . $value;
             }
+            echo"</p>";
 
             return false;
         }
